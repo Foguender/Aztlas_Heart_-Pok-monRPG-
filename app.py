@@ -194,16 +194,21 @@ with abas[1]:
         
         item_pesquisado = st.selectbox("Pesquisar Item no Acervo do Mestre:", ["-- Selecione um Item --"] + list(banco_itens.keys()))
         
-        if item_pesquisado != "-- Selecione um Item --":
+       if item_pesquisado != "-- Selecione um Item --":
             dados = banco_itens[item_pesquisado]
-            preco_calculado = int(dados["preco_base"] * multiplicador)
+            
+            # max(1, ...) garante que o preço final seja de pelo menos 1 Pokédólar (₽), mesmo com descontos massivos
+            preco_calculado = max(1, int(dados["preco_base"] * multiplicador))
             
             st.markdown(f"#### 📦 {item_pesquisado}")
             st.write(f"*{dados['descricao']}*")
             
             c1, c2 = st.columns(2)
             c1.metric(label="Preço Comercial Flutuante", value=f"{preco_calculado}₽")
-            c2.metric(label="Preço Base (Fixo)", value=f"{dados['preco_base']}₽", delta=f"{preco_calculado - dados['preco_base']}₽")
+            
+            # Calcula a diferença de preço exibindo o sinal correto no delta
+            diferenca = preco_calculado - dados['preco_base']
+            c2.metric(label="Preço Base (Fixo)", value=f"{dados['preco_base']}₽", delta=f"{diferenca}₽")
     else:
         st.write("Consulte o Mestre da mesa para saber a disponibilidade e os valores atuais das lojas locais.")
 
