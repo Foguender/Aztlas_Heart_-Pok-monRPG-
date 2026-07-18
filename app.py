@@ -130,18 +130,22 @@ if "id" in parametros_url:
                 st.markdown(f"- **Oculta (Habilidade E):** {poke[9]}")
 
 # MODO 2: EXIBIR A LISTA PRINCIPAL COM LINKS NOS NOMES
+# MODO 2: EXIBIR A LISTA PRINCIPAL COM LINKS NOS NOMES
 else:
     st.title("PokéDex Completa")
     st.write(
         f"Exibindo **{len(df_filtrado)}** Pokémon. Clique no nome de qualquer um para abrir os detalhes."
     )
 
-    # Criamos uma nova coluna temporária chamada "Link" que gera o link dinâmico da URL para cada Pokémon
-    # Usamos o target="_self" para abrir a ficha na mesma aba do navegador
+    # Criamos uma cópia para não alterar os dados originais
     df_exibicao = df_filtrado.copy()
-    df_exibicao["Link"] = df_exibicao["ID"].apply(lambda x: f"/?id={x}")
 
-    # Removemos a visualização da coluna ID para ficar mais limpo, se preferir
+    # Em vez de criar uma nova coluna, transformamos a própria coluna "Nome" na URL.
+    # Mas guardamos o texto original em uma coluna oculta para o Streamlit usar como rótulo!
+    df_exibicao["Nome_Texto"] = df_exibicao["Nome"]
+    df_exibicao["Nome"] = df_exibicao["ID"].apply(lambda x: f"/?id={x}")
+
+    # Exibe a tabela configurada corretamente
     st.data_editor(
         df_exibicao,
         use_container_width=True,
@@ -152,14 +156,16 @@ else:
             "Tipo 1",
             "Tipo 2",
             "Habilidade 1",
-        ],  # Define a ordem visual das colunas
+        ],  # Mantém a ordem visual idêntica ao Pokémon DB
         column_config={
             "Nome": st.column_config.LinkColumn(
                 "Nome",
-                display_text=r"^.*$",  # Faz o texto do link ser o próprio Nome do Pokémon
+                display_text="^.*$",  # Regex para capturar o texto do link
+                # O segredo está aqui: dizemos para o Streamlit usar o texto da coluna oculta
+                text_col="Nome_Texto",
                 help="Clique para ver os detalhes",
             ),
-            "Link": None,  # Esconde a coluna de links brutos
+            "Nome_Texto": None,  # Esconde a coluna auxiliar de texto puro
         },
-        disabled=True,  # Impede que o usuário digite ou edite a tabela
+        disabled=True,  # Impede edições acidentais na tabela
     )
