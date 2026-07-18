@@ -1,11 +1,48 @@
 import streamlit as st
 from streamlit_image_coordinates import streamlit_image_coordinates
 import os
-import random
+import sqlite3
+import pandas as pd
 from datetime import datetime
 
 # Configuração da página
 st.set_page_config(page_title="Aztlas Heart - Visor Tático", layout="wide")
+
+# --- FUNÇÃO AUXILIAR: CARREGAMENTO DA POKÉDEX DO SCRIPT SQLite ---
+def carregar_dados_pokedex():
+    # Caminho ajustado para o banco de dados que está no seu repositório
+    caminho_db = "pokedex aztlas - Copia.db"
+    
+    if not os.path.exists(caminho_db):
+        return None, f"Arquivo `{caminho_db}` não encontrado na raiz do projeto."
+        
+    try:
+        conn = sqlite3.connect(caminho_db)
+        
+        # 1. Carrega dados fundamentais (Nome, Tipo, Tamanho, Habilidades)
+        df_poke = pd.read_sql_query("SELECT * FROM pokemon", conn)
+        
+        # 2. Carrega as descrições customizadas do seu RPG (Espécie e Biologia)
+        df_desc = pd.read_sql_query("SELECT Nome, Espécie, Descrição FROM descricao_pokedexrpg", conn)
+        
+        # 3. Carrega os Atributos de Combate (Base Stats)
+        df_stats = pd.read_sql_query("SELECT * FROM 'Base Stats'", conn)
+        
+        conn.close()
+        
+        # Garante a limpeza de strings para um merge limpo e sem falhas ocultas
+        for df in [df_poke, df_desc, df_stats]:
+            if "Nome" in df.columns:
+                df["Nome"] = df["Nome"].astype(str).str.strip()
+                
+        # Junta todas as tabelas usando o "Nome" como chave de ligação universal
+        df_completo = pd.merge(df_poke, df_desc, on="Nome", how="left")
+        df_completo = pd.merge(df_completo, df_stats, on="Nome", how="left")
+        
+        return df_completo, None
+    except Exception as e:
+        return None, str(e)
+
 
 # 1. CONTROLE DE ACESSO NA BARRA LATERAL (Nova Senha Atualizada)
 if "modo_mestre" not in st.session_state:
@@ -29,16 +66,76 @@ if st.session_state.modo_mestre:
 
 abas = st.tabs(abas_lista)
 
-# --- ABA 1: POKÉDEX ---
+# --- ABA 1: POKÉDEX REGIONAL (DINÂMICA VIA SQLITE) ---
 with abas[0]:
-    st.title("📱 Pokédex Regional")
-    st.write("Consulte os dados dos Pokémon da região de Aztlas aqui.")
+    st.title("📱 Pokédex Regional de Aztlas")
+    
+    # Processa o banco de dados real enviado
+    df_pokedex, erro_db = carregar_dados_pokedex()
+    
+    if erro_db:
+        st.error(f"❌ Falha ao acionar a Pokédex: {erro_db}")
+        st.info("Verifique se o arquivo do banco está commitado com o nome exato na raiz do seu GitHub.")
+    elif df_pokedex is not None and not df_pokedex.empty:
+        # Remove nulos e extrai os nomes únicos salvos no seu banco de dados
+        df_pokedex = df_pokedex.dropna(subset=["Nome"])
+        df_pokedex = df_pokedex[df_pokedex["Nome"] != ""]
+        lista_pokemon = sorted(df_pokedex["Nome"].unique())
+        
+        pokemon_selecionado = st.selectbox("Pesquisar Espécime:", ["-- Selecione um Pokémon --"] + lista_pokemon)
+        
+        if pokemon_selecionado != "-- Selecione um Pokémon --":
+            # Coleta a linha de dados unificada do monstrinho escolhido
+            poke_dados = df_pokedex[df_pokedex["Nome"] == pokemon_selecionado].iloc[0]
+            
+            # Cabeçalho da Dex
+            num_dex = poke_dados.get("Dex No.", "???")
+            st.markdown(f"## {pokemon_selecionado} `Nº {num_dex}`")
+            
+            # Tipagem formatada
+            t1 = poke_dados.get("Tipo 1", "???")
+            t2 = poke_dados.get("Tipo 2", None)
+            tipos_str = f"`{t1}`" + (f" / `{t2}`" if t2 and pd.notna(t2) else "")
+            
+            st.markdown(f"**Tipo:** {tipos_str} | **Espécie:** *{poke_dados.get('Espécie', 'Não catalogada')}*")
+            
+            # Métricas Físicas e Habilidades
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("Altura", f"{poke_dados.get('Altura', '??')} m")
+            with c2:
+                st.metric("Peso", f"{poke_dados.get('Peso', '??')} kg")
+            with c3:
+                h1 = poke_dados.get("Habilidade 1", "Nenhuma")
+                he = poke_dados.get("Habilidade E", None)
+                st.markdown(f"**Habilidade:** {h1}")
+                if he and pd.notna(he):
+                    st.markdown(f"**Oculta:** {he}")
+                    
+            st.markdown("---")
+            
+            # Biologia / Lore Secreta da tabela do RPG
+            st.subheader("📜 Registro Biológico")
+            desc_bio = poke_dados.get("Descrição", "Nenhum dado biológico inserido para este espécime.")
+            st.info(desc_bio)
+            
+            # Status Base de Combate extraídos do SQL
+            if "HP" in poke_dados.columns:
+                st.subheader("📊 Atributos de Combate (Base Stats)")
+                col_stats = st.columns(6)
+                stats_lista = ["HP", "Atk", "Def", "Sp. Atk", "Sp. Def", "Spe"]
+                
+                for idx, stat_nome in enumerate(stats_lista):
+                    with col_stats[idx]:
+                        val = poke_dados.get(stat_nome, 0)
+                        st.metric(label=stat_nome, value=int(val) if pd.notna(val) else 0)
+    else:
+        st.warning("A Pokédex carregou corretamente, mas não encontrou nenhuma entrada válida.")
 
 # --- ABA 2: ITENS (Mercado Dinâmico com Flutuação de Preço) ---
 with abas[1]:
     st.title("🎒 Inventário e Mercado")
     
-    # Banco de dados simulado de itens (substitua ou conecte com seu .db depois)
     banco_itens = {
         "Pokébola": {"preco_base": 200, "descricao": "Dispositivo básico de captura."},
         "Superbola": {"preco_base": 600, "descricao": "Dispositivo com maior taxa de captura."},
@@ -48,7 +145,6 @@ with abas[1]:
         "Reviver": {"preco_base": 1500, "descricao": "Revive um Pokémon desmaiado com metade do HP."},
     }
     
-    # Jogadores veem apenas a listagem comum ou descrição simples se você quiser
     st.write("Bem-vindo ao catálogo de suprimentos de Aztlas.")
     
     # VISÃO EXCLUSIVA DO MESTRE NO VISOR DE ITENS
@@ -57,12 +153,10 @@ with abas[1]:
         st.markdown("### 🛒 Visor do Mestre: Precificação em Tempo Real")
         st.caption("Esta seção calcula custos variáveis automaticamente sem expor tabelas aos players.")
         
-        # Sistema de flutuação baseado na hora e dia real
         agora = datetime.now()
         hora_atual = agora.hour
-        dia_semana = agora.weekday() # 0 = Segunda, 5 = Sábado, 6 = Domingo
+        dia_semana = agora.weekday()
         
-        # Lógica de mercado: Itens ficam mais caros de madrugada (escassez) ou finais de semana
         multiplicador = 1.0
         motivo_flutua = "Preço regular de mercado."
         
@@ -78,14 +172,12 @@ with abas[1]:
 
         st.info(f"📅 **Status do Mercado Atual:** {motivo_flutua} | Servidor: {hora_atual:02d}h")
         
-        # Campo de pesquisa direta sem mostrar tabela
         item_pesquisado = st.selectbox("Pesquisar Item no Acervo do Mestre:", ["-- Selecione um Item --"] + list(banco_itens.keys()))
         
         if item_pesquisado != "-- Selecione um Item --":
             dados = banco_itens[item_pesquisado]
             preco_calculado = int(dados["preco_base"] * multiplicador)
             
-            # Layout limpo exibindo os detalhes do item computado
             st.markdown(f"#### 📦 {item_pesquisado}")
             st.write(f"*{dados['descricao']}*")
             
@@ -93,10 +185,9 @@ with abas[1]:
             c1.metric(label="Preço Comercial Flutuante", value=f"{preco_calculado}₽")
             c2.metric(label="Preço Base (Fixo)", value=f"{dados['preco_base']}₽", delta=f"{preco_calculado - dados['preco_base']}₽")
     else:
-        # Visão padrão do jogador: Apenas lista simples sem valores ocultos ou dinâmicos
         st.write("Consulte o Mestre da mesa para saber a disponibilidade e os valores atuais das lojas locais.")
 
-# --- ABA 3: TACTICAL MAP (Correção dos seletores de subpastas) ---
+# --- ABA 3: TACTICAL MAP ---
 with abas[2]:
     st.title("🗺️ Aztlas Tactical Visor")
     
@@ -111,26 +202,20 @@ with abas[2]:
     
     with col_mapa:
         st.subheader("Visualizador de Lentes")
-        
         lente = st.selectbox("Selecione o nível de Lente (Zoom):", ["Full Map", "Half Map", "Quarter Map"])
         
         nome_subpasta = ""
         arquivo_selecionado = ""
         
-        # Ajuste dinâmico de pastas conforme seu projeto
         if lente == "Full Map":
             nome_subpasta = "Full"
             arquivo_selecionado = "full_map.png"
-            
         elif lente == "Half Map":
             nome_subpasta = "Half"
-            # Radio para o usuário alternar livremente entre os 2 arquivos reais da pasta
             opcao_half = st.radio("Selecione o arquivo da metade correspondente:", ["Arquivo 1", "Arquivo 2"], horizontal=True)
             arquivo_selecionado = "half_map_1.png" if opcao_half == "Arquivo 1" else "half_map_2.png"
-                
         elif lente == "Quarter Map":
             nome_subpasta = "Quarter"
-            # Lista para alternar livremente entre as 4 partes reais da pasta
             opcao_quarter = st.selectbox("Selecione o arquivo do quadrante correspondente:", ["Quadrante 1", "Quadrante 2", "Quadrante 3", "Quadrante 4"])
             mapeamento_quarter = {
                 "Quadrante 1": "quarter_nw.png",
@@ -140,16 +225,14 @@ with abas[2]:
             }
             arquivo_selecionado = mapeamento_quarter[opcao_quarter]
         
-        # Montagem do caminho
         caminho_final = f"mapas/{nome_subpasta}/{arquivo_selecionado}"
         
         if os.path.exists(caminho_final):
             coordenadas = streamlit_image_coordinates(caminho_final, key=f"click_{lente}_{arquivo_selecionado}")
         else:
-            # Caso os nomes internos ainda variem, exibe um campo de texto alternativo para não quebrar a sessão
             st.error(f"❌ Arquivo não encontrado em: `{caminho_final}`")
             st.info("Caso tenha mudado os nomes internos das imagens, use o campo abaixo para carregar manualmente:")
-            arquivo_manual = st.text_input("Digite o nome exato do arquivo com a extensão (ex: mapa_novo.png):", value=arquivo_selecionado)
+            arquivo_manual = st.text_input("Digite o nome exato do arquivo com a extensão:", value=arquivo_selecionado)
             caminho_final = f"mapas/{nome_subpasta}/{arquivo_manual}"
             
             if os.path.exists(caminho_final):
@@ -157,7 +240,6 @@ with abas[2]:
             else:
                 coordenadas = None
             
-        # Calibrador Dev Mode
         if st.session_state.modo_mestre and coordenadas:
             st.markdown("---")
             st.markdown("### 🛠️ Dev Mode: Calibrador")
@@ -166,7 +248,6 @@ with abas[2]:
 
     with col_info:
         st.subheader("🛰️ Scanner de Região")
-        
         if coordenadas:
             x = coordenadas["x"]
             y = coordenadas["y"]
