@@ -206,11 +206,10 @@ if st.session_state.id_pokemon_selecionado is not None:
                 st.write("---")
                 st.subheader("🎲 Atributos Convertidos para RPG (Poke5e)")
 
-                # --- SISTEMA DE AJUSTE MANUAL (OVERRIDE) ---
-                # Aqui você pode adicionar as fichas prontas do seu RPG para ignorar a fórmula automática.
-                # Vamos usar o ID do Pitya. Troque o número 67 pelo ID real dele no seu banco se for diferente!
+                # --- SISTEMA DE AJUSTE MANUAL POR NOME (OVERRIDE) ---
+                # Cadastramos as fichas oficiais do Poke5e direto pelo nome exato do Pokémon
                 fichas_customizadas = {
-                    67: {
+                    "Pitya": {
                         "STR": 12,
                         "DEX": 15,
                         "CON": 13,
@@ -220,13 +219,15 @@ if st.session_state.id_pokemon_selecionado is not None:
                         "HP_RPG": 17,
                         "AC": 12,
                     }
+                    # Você pode adicionar outros Pokémon oficiais aqui embaixo seguindo o mesmo padrão!
                 }
 
-                id_atual = int(st.session_state.id_pokemon_selecionado)
+                # Puxa o nome atual do Pokémon (removendo espaços extras para garantir o encaixe)
+                nome_atual = str(poke_geral[2]).strip()
 
-                if id_atual in fichas_customizadas:
-                    # Se o Pokémon estiver na lista, usa os seus dados perfeitos
-                    c = fichas_customizadas[id_atual]
+                if nome_atual in fichas_customizadas:
+                    # Se o nome estiver na lista, puxa a sua ficha perfeitinha do Poke5e
+                    c = fichas_customizadas[nome_atual]
                     str_score, dex_score, con_score = (
                         c["STR"],
                         c["DEX"],
@@ -240,7 +241,7 @@ if st.session_state.id_pokemon_selecionado is not None:
                     hp_rpg = c["HP_RPG"]
                     ac_total = c["AC"]
                 else:
-                    # Caso contrário, roda a fórmula matemática padrão
+                    # Se não estiver cadastrado na mão, o sistema roda o cálculo aproximado
                     con_score = calcular_atributo_dnd(hp)
                     str_score = calcular_atributo_dnd(atk)
                     dex_score = calcular_atributo_dnd(de)
@@ -248,14 +249,13 @@ if st.session_state.id_pokemon_selecionado is not None:
                     wis_score = calcular_atributo_dnd(spdef)
                     cha_score = calcular_atributo_dnd(spe)
 
-                    # Cálculos automáticos de HP de aventura e AC para os outros
-                    hp_rpg = 10 + (con_score - 10) // 2  # HP base padrão de D&D
+                    hp_rpg = 10 + (con_score - 10) // 2
                     mod_dex_num = (dex_score - 10) // 2
                     mod_wis_num = (wis_score - 10) // 2
                     bonus_esp = max(0, mod_wis_num) if mod_wis_num > 0 else 0
                     ac_total = 10 + mod_dex_num + bonus_esp
 
-                # Cálculo visual dos modificadores para os cards (+2, -1, etc.)
+                # Calcula os modificadores visuais (+2, -1, etc.)
                 mod_str = calcular_modificador(str_score)
                 mod_dex = calcular_modificador(dex_score)
                 mod_con = calcular_modificador(con_score)
@@ -277,7 +277,7 @@ if st.session_state.id_pokemon_selecionado is not None:
 
                 st.write("")
 
-                # Grid com os 6 atributos estilo ficha de D&D
+                # Grid com os 6 atributos principais estilo ficha D&D
                 c1, c2, c3, c4, c5, c6 = st.columns(6)
                 with c1:
                     st.metric(
