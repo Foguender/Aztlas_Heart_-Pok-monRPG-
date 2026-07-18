@@ -17,7 +17,6 @@ def conectar_banco():
 # --- BUSCA DE DADOS ---
 def carregar_dados_pokemon():
     conn = conectar_banco()
-    # Carrega a tabela inteira do banco de dados diretamente para o Pandas
     query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
     df = pd.read_sql_query(query, conn)
     conn.close()
@@ -43,16 +42,18 @@ def buscar_detalhes_pokemon(pokemon_id):
     return poke_dados, desc_dados
 
 
-# --- CARREGAMENTO INICIAL ---
+# --- INICIALIZAÇÃO DO ESTADO DE SESSÃO ---
+# Controla se estamos vendo a lista ou a ficha de um Pokémon específico
+if "id_pokemon_selecionado" not in st.session_state:
+    st.session_state.id_pokemon_selecionado = None
+
 df_pokemon = carregar_dados_pokemon()
 
-# --- BARRA LATERAL: FILTROS E BUSCA ---
+# --- BARRA LATERAL (APENAS OS FILTROS AGORA) ---
 st.sidebar.header("🔍 Filtros da Pokédex")
 
-# 1. Filtro por Nome
 filtro_nome = st.sidebar.text_input("Buscar por Nome:", "")
 
-# 2. Filtro por Tipo (Pega todos os tipos únicos existentes no banco)
 tipos_disponiveis = sorted(
     list(
         set(df_pokemon["Tipo 1"].dropna()) | set(df_pokemon["Tipo 2"].dropna())
@@ -62,51 +63,41 @@ filtro_tipo = st.sidebar.selectbox(
     "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
 )
 
-# 3. Organizador (Ordenação de Colunas)
 coluna_ordenar = st.sidebar.selectbox(
     "Ordenar por:", options=df_pokemon.columns.tolist(), index=2
-)  # Padrão: Nome
+)
 ordem_crescente = st.sidebar.radio("Ordem:", ["Crescente", "Decrescente"])
 ascendente = True if ordem_crescente == "Crescente" else False
 
-# --- APLICAÇÃO DOS FILTROS NO PANDAS ---
+# --- APLICAÇÃO DOS FILTROS ---
 df_filtrado = df_pokemon.copy()
 
-# Aplicando busca por nome
 if filtro_nome:
     df_filtrado = df_filtrado[
         df_filtrado["Nome"].str.contains(filtro_nome, case=False, na=False)
     ]
 
-# Aplicando filtro por tipo
 if filtro_tipo != "Todos":
     df_filtrado = df_filtrado[
         (df_filtrado["Tipo 1"] == filtro_tipo)
         | (df_filtrado["Tipo 2"] == filtro_tipo)
     ]
 
-# Aplicando a ordenação em qualquer coluna escolhida
 df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
 
-# --- SELEÇÃO PARA VER DETALHES ---
-st.sidebar.markdown("---")
-st.sidebar.subheader("📄 Ficha do Pokémon")
-
-# Cria uma lista de opções para a caixa de seleção interna
-opcoes_pokemon = {"Ver a Lista Completa": None}
-for _, row in df_filtrado.iterrows():
-    opcoes_pokemon[f"#{row['ID']} - {row['Nome']}"] = row["ID"]
-
-pokemon_escolhido = st.sidebar.selectbox(
-    "Selecione para abrir os detalhes:", options=list(opcoes_pokemon.keys())
-)
-id_selecionado = opcoes_pokemon[pokemon_escolhido]
 
 # --- CORPO PRINCIPAL DO SITE ---
 
-# PÁGINA DE DETALHES (Se um Pokémon foi selecionado no menu lateral)
-if id_selecionado is not None:
-    poke, desc = buscar_detalhes_pokemon(int(id_selecionado))
+# MODO 1: EXIBIR A FICHA DO POKÉMON SELECIONADO
+if st.session_state.id_pokemon_selecionado is not None:
+    # Botão para voltar à lista principal
+    if st.button("⬅ Voltar para a Lista"):
+        st.session_state.id_pokemon_selecionado = None
+        st.rerun()
+
+    poke, desc = buscar_detalhes_pokemon(
+        int(st.session_state.id_pokemon_selecionado)
+    )
 
     if poke:
         st.title(f"{poke[2]} {poke[1] if poke[1] else ''}")
@@ -138,13 +129,32 @@ if id_selecionado is not None:
             if poke[9]:
                 st.markdown(f"- **Oculta (Habilidade E):** {poke[9]}")
 
-# PÁGINA PRINCIPAL: LISTA ESTILO POKÉMON DB
+# MODO 2: EXIBIR A TABELA PRINCIPAL (ESTILO POKÉMON DB)
 else:
     st.title("PokéDex Completa")
     st.write(
-        f"Exibindo **{len(df_filtrado)}** Pokémon com os filtros atuais. Use a barra lateral para ver detalhes de um Pokémon específico."
+        "Selecione a caixinha ao lado esquerdo de qualquer Pokémon para abrir sua ficha detalhada."
     )
 
-    # Exibe a tabela interativa lindamente na tela.
-    # O usuário também pode clicar no topo de qualquer coluna da tabela se quiser reordenar por lá!
-    st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
+    # st.dataframe configurado para capturar eventos de seleção/clique de linha única
+    evento_selecao = st.dataframe(
+        df_filtrado,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",  # Faz o site recarregar ao clicar na linha
+        selection_mode="single-row",  # Permite selecionar apenas um Pokémon por vez
+    )
+
+    # Se o usuário clicou em alguma linha, descobrimos qual Pokémon foi e guardamos o ID dele
+    if (
+        evento_selecao
+        and "selection" in evento_selecao
+        and "rows" in evento_selecao["selection"]
+    ):
+        linhas_selecionadas = evento_selecao["selection"]["rows"]
+        if len(linhas_selecionadas) > 0:
+            indice_linha = linhas_selecionadas[0]
+            # Pega o ID real do Pokémon usando a posição clicada no DataFrame filtrado
+            id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
+            st.session_state.id_pokemon_selecionado = id_pokemon
+            st.rerun()
