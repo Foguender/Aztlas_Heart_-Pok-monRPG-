@@ -136,33 +136,64 @@ else:
         f"Exibindo **{len(df_filtrado)}** Pokémon. Clique no nome de qualquer um para abrir os detalhes."
     )
 
-    # Criamos uma cópia para não alterar os dados originais
-    df_exibicao = df_filtrado.copy()
+    # Criamos o cabeçalho da tabela em HTML/CSS para lembrar o estilo do Pokémon DB
+    html_tabela = """
+    <style>
+        .pokedex-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: sans-serif;
+        }
+        .pokedex-table th {
+            text-align: left;
+            padding: 10px;
+            background-color: #f2f2f2;
+            border-bottom: 2px solid #ddd;
+        }
+        .pokedex-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .pokedex-link {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .pokedex-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <table class="pokedex-table">
+        <tr>
+            <th>Dex No.</th>
+            <th>Nome</th>
+            <th>Tipo 1</th>
+            <th>Tipo 2</th>
+            <th>Habilidade 1</th>
+        </tr>
+    """
 
-    # Guardamos o nome real na coluna auxiliar
-    df_exibicao["Nome_Texto"] = df_exibicao["Nome"]
-    # A coluna "Nome" passa a guardar o link de destino
-    df_exibicao["Nome"] = df_exibicao["ID"].apply(lambda x: f"/?id={x}")
+    # Preenchemos as linhas da tabela dinamicamente com os dados filtrados do banco
+    for _, row in df_filtrado.iterrows():
+        dex_no = row["Dex No."] if row["Dex No."] else "-"
+        nome = row["Nome"]
+        tipo1 = row["Tipo 1"]
+        tipo2 = row["Tipo 2"] if row["Tipo 2"] else "-"
+        hab1 = row["Habilidade 1"]
+        p_id = row["ID"]
 
-    # Exibe a tabela configurada corretamente
-    st.data_editor(
-        df_exibicao,
-        use_container_width=True,
-        hide_index=True,
-        column_order=[
-            "Dex No.",
-            "Nome",
-            "Tipo 1",
-            "Tipo 2",
-            "Habilidade 1",
-        ],  # Mantém a ordem visual idêntica ao Pokémon DB
-        column_config={
-            "Nome": st.column_config.LinkColumn(
-                "Nome",
-                text_col="Nome_Texto",  # Puxa o texto legível desta coluna
-                help="Clique para ver os detalhes",
-            ),
-            "Nome_Texto": None,  # Esconde a coluna auxiliar para não duplicar na tela
-        },
-        disabled=True,  # Impede edições acidentais na tabela
-    )
+        # O link aponta para a própria URL com o parâmetro ?id=X correspondente
+        html_tabela += f"""
+        <tr>
+            <td>{dex_no}</td>
+            <td><a class="pokedex-link" href="/?id={p_id}" target="_self">{nome}</a></td>
+            <td>{tipo1}</td>
+            <td>{tipo2}</td>
+            <td>{hab1}</td>
+        </tr>
+        """
+
+    html_tabela += "</table>"
+
+    # Renderiza a tabela HTML de forma segura no Streamlit
+    st.markdown(html_tabela, unsafe_allow_html=True)
