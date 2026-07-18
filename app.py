@@ -81,64 +81,67 @@ with abas[1]:
 with abas[2]:
     st.title("🗺️ Aztlas Tactical Visor")
     
-    # Mensagem secreta no mapa para o Mestre
     if st.session_state.modo_mestre:
         st.markdown("""
         <div style="background-color: #742a2a; color: #ffffff; padding: 12px; border-radius: 6px; border-left: 5px solid #feb2b2; margin-bottom: 15px;">
-            <strong>👁️ VISÃO DE MESTRE:</strong> Os segredos e ferramentas de calibração estão visíveis para você.
+            <strong>👁️ VISÃO DE MESTRE:</strong> Dev Mode e notas confidenciais liberados.
         </div>
         """, unsafe_allow_html=True)
 
-    # Divisão de layout: Mapa na Esquerda, Informações na Direita
+    # Divisão: Mapa na Esquerda, Scanner na Direita
     col_mapa, col_info = st.columns([2, 1])
     
     with col_mapa:
         st.subheader("Visualizador de Lentes")
         
-        # 1. Seleção do nível geral de zoom
+        # 1. Seleção da Lente
         lente = st.selectbox("Selecione o nível de Lente (Zoom):", ["Full Map", "Half Map", "Quarter Map"])
         
-        # Variável para guardar o nome exato do arquivo final
         nome_arquivo_mapa = ""
         
-        # 2. Lógica adaptada para as subdivisões reais das imagens
+        # 2. Associação direta com os nomes exatos das suas pastas e arquivos
         if lente == "Full Map":
-            nome_arquivo_mapa = "MApa Aztlas (1).png"
+            nome_arquivo_mapa = "Full/full_map.png" # Ajuste o 'full_map.png' para o nome real do seu arquivo cheio
             
         elif lente == "Half Map":
-            # 2 Imagens: Leste ou Oeste, Norte ou Sul (ajuste as opções conforme você nomeou os arquivos)
-            metade = st.radio("Selecione a Metade:", ["Metade 1 (Oeste)", "Metade 2 (Leste)"], horizontal=True)
-            if metade == "Metade 1 (Oeste)":
-                nome_arquivo_mapa = "MApa Aztlas (2) - Half Left.png"
+            # Seleção entre as suas 2 imagens da pasta Half
+            metade = st.radio("Selecione a Metade:", ["Metade 1", "Metade 2"], horizontal=True)
+            if metade == "Metade 1":
+                nome_arquivo_mapa = "Half/half_map_1.png" # Nome real do primeiro arquivo na pasta Half
             else:
-                nome_arquivo_mapa = "MApa Aztlas (2) - Half Right.png"
+                nome_arquivo_mapa = "Half/half_map_2.png" # Nome real do segundo arquivo na pasta Half
                 
         elif lente == "Quarter Map":
-            # 4 Imagens: Os 4 quadrantes clássicos
-            quadrante = st.selectbox("Selecione o Quadrante:", ["Noroeste (NW)", "Nordeste (NE)", "Sudoeste (SW)", "Sudoeste (SE)"])
-            # Transforma a seleção no nome do seu arquivo (ex: quarter_nw.png)
-            sufixo = quadrante.split("(")[1].replace(")", "").lower().strip()
-            nome_arquivo_mapa = f"quarter_{sufixo}.png"
+            # Seleção entre as suas 4 imagens da pasta Quarter
+            quadrante = st.selectbox("Selecione o Quadrante:", ["Noroeste (NW)", "Nordeste (NE)", "Sudoeste (SW)", "Sudeste (SE)"])
+            
+            if quadrante == "Noroeste (NW)":
+                nome_arquivo_mapa = "Quarter/quarter_nw.png"
+            elif quadrante == "Nordeste (NE)":
+                nome_arquivo_mapa = "Quarter/quarter_ne.png"
+            elif quadrante == "Sudoeste (SW)":
+                nome_arquivo_mapa = "Quarter/quarter_sw.png"
+            elif quadrante == "Sudeste (SE)":
+                nome_arquivo_mapa = "Quarter/quarter_se.png"
         
-        # Monta o caminho final para o Streamlit buscar na pasta
+        # Monta o caminho final apontando para a sua estrutura de subpastas
         caminho_final = f"mapas/{nome_arquivo_mapa}"
         
-        # 3. Renderização e captura do clique
+        # 3. Carrega a imagem na tela
         if os.path.exists(caminho_final):
-            # O key muda dinamicamente baseado no arquivo para não dar conflito no Streamlit
             coordenadas = streamlit_image_coordinates(caminho_final, key=f"click_{nome_arquivo_mapa}")
         else:
-            st.warning(f"⚠️ Arquivo não encontrado no GitHub: `{caminho_final}`")
-            st.info("Verifique se o nome do arquivo na sua pasta 'mapas' está exatamente igual ao listado acima.")
+            st.warning(f"⚠️ Arquivo não encontrado: `{caminho_final}`")
+            st.info("Verifique se o nome do arquivo dentro da subpasta está idêntico (incluindo letras maiúsculas/minúsculas).")
             coordenadas = None
             
-        # Ferramenta de Calibração (Dev Mode) automática para o Mestre
+        # Dev Mode para calibrar as Bounding Boxes
         if st.session_state.modo_mestre and coordenadas:
             st.markdown("---")
             st.markdown("### 🛠️ Dev Mode: Calibrador")
-            st.write(f"Mapa ativo: `{nome_arquivo_mapa}`")
-            st.write(f"Clique registrado: **X:** `{coordenadas['x']}`, **Y:** `{coordenadas['y']}`")
-            st.code(f"# Bounding Box para este clique específico:\n[X_min, X_max, Y_min, Y_max]")
+            st.write(f"Caminho ativo: `{caminho_final}`")
+            st.write(f"Clique em: **X:** `{coordenadas['x']}`, **Y:** `{coordenadas['y']}`")
+            st.code(f"# Use para criar a colisão neste mapa específico:\n[X_min, X_max, Y_min, Y_max]")
 
     with col_info:
         st.subheader("🛰️ Scanner de Região")
@@ -147,19 +150,38 @@ with abas[2]:
             x = coordenadas["x"]
             y = coordenadas["y"]
             
-            # Aqui entra a sua checagem de Bounding Boxes. 
-            # Como agora temos mapas diferentes, você pode filtrar pelo mapa ativo:
-            st.write(f"Buscando pontos no mapa `{nome_arquivo_mapa}`...")
-            
-            # EXEMPLO: Se o clique foi no Quadrante Noroeste (quarter_nw.png)
-            if nome_arquivo_mapa == "quarter_nw.png" and (50 <= x <= 150) and (50 <= y <= 150):
+            # Exemplo de detecção baseada no arquivo específico que está aberto
+            if "quarter_nw.png" in caminho_final and (50 <= x <= 150) and (50 <= y <= 150):
                 st.markdown("### 🏕️ Acampamento Rebelde")
-                st.write("Um ponto escondido usado por treinadores renegados.")
+                st.write("Localizado nas montanhas do noroeste.")
             else:
-                st.info(f"Coordenadas registradas neste clique: X={x}, Y={y}. Nenhum segredo mapeado aqui ainda.")
+                st.info(f"Coordenadas registradas em `{nome_arquivo_mapa}`: X={x}, Y={y}.")
         else:
-            st.info("Clique em qualquer ponto do mapa ativo para escanear a área.")
-
+            st.info("Clique no mapa para escanear a área.")
+            # --------------------------------------------------------------
+            # LOGICA DE BOUNDING BOXES (Exemplo Prático)
+            # --------------------------------------------------------------
+            # Se o clique estiver dentro do intervalo X e Y configurado:
+            if (100 <= x <= 250) and (150 <= y <= 300):
+                st.markdown("### 🏔️ Cidade Inicial: Neo-Aztlas")
+                st.write("Uma metrópole tecnológica cercada por muralhas antigas.")
+                st.metric(label="População", value="12.500")
+                st.metric(label="Alinhamento", value="Neutro")
+                
+                if st.session_state.modo_mestre:
+                    st.error("⚠️ NOTA DO MESTRE: A guilda dos ladrões controla os subterrâneos daqui.")
+            
+            elif (400 <= x <= 600) and (50 <= y <= 200):
+                st.markdown("### 🌲 Floresta dos Murmúrios")
+                st.write("Uma densa mata onde bússolas falham e sons estranhos ecoam.")
+                st.warning("Efeito Ativo: Visibilidade Reduzida (-2 em testes de Percepção).")
+            
+            else:
+                st.markdown("### 🏜️ Terras Desconhecidas")
+                st.write(f"Coordenadas atuais mapeadas pelo Visor: X:{x}, Y:{y}.")
+                st.info("Nenhum ponto de interesse descoberto ou configurado neste quadrante ainda.")
+        else:
+            st.info("Clique em qualquer ponto do mapa à esquerda para escanear a região correspondente.")
 # ------------------------------------------------------------------
 # ABA 4: ESCUDO DO MESTRE (EXCLUSIVA E CONDICIONAL)
 # ------------------------------------------------------------------
