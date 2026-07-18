@@ -204,32 +204,80 @@ if st.session_state.id_pokemon_selecionado is not None:
                 st.dataframe(df_stats, hide_index=True, use_container_width=True)
 
                 st.write("---")
+                st.subheader("🎲 Atributos Convertidos para RPG (Poke5e)")
 
-                # Processamento das Conversões matemáticas
-                con_score = calcular_atributo_dnd(hp)
-                str_score = calcular_atributo_dnd(atk)
-                dex_score = calcular_atributo_dnd(de)
-                int_score = calcular_atributo_dnd(spatk)
-                wis_score = calcular_atributo_dnd(spdef)
-                cha_score = calcular_atributo_dnd(spe)
+                # --- SISTEMA DE AJUSTE MANUAL (OVERRIDE) ---
+                # Aqui você pode adicionar as fichas prontas do seu RPG para ignorar a fórmula automática.
+                # Vamos usar o ID do Pitya. Troque o número 67 pelo ID real dele no seu banco se for diferente!
+                fichas_customizadas = {
+                    67: {
+                        "STR": 12,
+                        "DEX": 15,
+                        "CON": 13,
+                        "INT": 6,
+                        "WIS": 10,
+                        "CHA": 10,
+                        "HP_RPG": 17,
+                        "AC": 12,
+                    }
+                }
 
-                mod_con = calcular_modificador(con_score)
+                id_atual = int(st.session_state.id_pokemon_selecionado)
+
+                if id_atual in fichas_customizadas:
+                    # Se o Pokémon estiver na lista, usa os seus dados perfeitos
+                    c = fichas_customizadas[id_atual]
+                    str_score, dex_score, con_score = (
+                        c["STR"],
+                        c["DEX"],
+                        c["CON"],
+                    )
+                    int_score, wis_score, cha_score = (
+                        c["INT"],
+                        c["WIS"],
+                        c["CHA"],
+                    )
+                    hp_rpg = c["HP_RPG"]
+                    ac_total = c["AC"]
+                else:
+                    # Caso contrário, roda a fórmula matemática padrão
+                    con_score = calcular_atributo_dnd(hp)
+                    str_score = calcular_atributo_dnd(atk)
+                    dex_score = calcular_atributo_dnd(de)
+                    int_score = calcular_atributo_dnd(spatk)
+                    wis_score = calcular_atributo_dnd(spdef)
+                    cha_score = calcular_atributo_dnd(spe)
+
+                    # Cálculos automáticos de HP de aventura e AC para os outros
+                    hp_rpg = 10 + (con_score - 10) // 2  # HP base padrão de D&D
+                    mod_dex_num = (dex_score - 10) // 2
+                    mod_wis_num = (wis_score - 10) // 2
+                    bonus_esp = max(0, mod_wis_num) if mod_wis_num > 0 else 0
+                    ac_total = 10 + mod_dex_num + bonus_esp
+
+                # Cálculo visual dos modificadores para os cards (+2, -1, etc.)
                 mod_str = calcular_modificador(str_score)
                 mod_dex = calcular_modificador(dex_score)
+                mod_con = calcular_modificador(con_score)
                 mod_int = calcular_modificador(int_score)
                 mod_wis = calcular_modificador(wis_score)
                 mod_cha = calcular_modificador(cha_score)
 
-                # Cálculo de AC Natural (10 + Mod_Dex + Bônus Esp. baseado em Sp.Def)
-                mod_dex_num = (dex_score - 10) // 2
-                mod_wis_num = (wis_score - 10) // 2
-                bonus_esp = max(0, mod_wis_num) if mod_wis_num > 0 else 0
-                ac_total = 10 + mod_dex_num + bonus_esp
+                # --- EXIBIÇÃO DOS STATUS DE COMBATE ---
+                col_hp, col_ac = st.columns(2)
+                with col_hp:
+                    st.metric(
+                        label="❤️ Pontos de Vida (HP Máximo)", value=hp_rpg
+                    )
+                with col_ac:
+                    st.metric(
+                        label="🛡️ Classe de Armadura (AC Natural)",
+                        value=ac_total,
+                    )
 
-                st.subheader("🎲 Atributos Convertidos para RPG (Poke5e)")
-                st.info(f"🛡️ **Classe de Armadura (AC Natural):** {ac_total}")
+                st.write("")
 
-                # Exibição paralela dos Atributos
+                # Grid com os 6 atributos estilo ficha de D&D
                 c1, c2, c3, c4, c5, c6 = st.columns(6)
                 with c1:
                     st.metric(
