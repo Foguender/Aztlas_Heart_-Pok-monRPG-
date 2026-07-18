@@ -67,6 +67,7 @@ if st.session_state.modo_mestre:
 abas = st.tabs(abas_lista)
 
 # --- ABA 1: POKÉDEX REGIONAL (DINÂMICA VIA SQLITE) ---
+# --- ABA 1: POKÉDEX REGIONAL (FORMATO LISTA COMPLETA) ---
 with abas[0]:
     st.title("📱 Pokédex Regional de Aztlas")
     
@@ -77,22 +78,40 @@ with abas[0]:
         st.error(f"❌ Falha ao acionar a Pokédex: {erro_db}")
         st.info("Verifique se o arquivo do banco está commitado com o nome exato na raiz do seu GitHub.")
     elif df_pokedex is not None and not df_pokedex.empty:
-        # Remove nulos e extrai os nomes únicos salvos no seu banco de dados
+        # Limpeza inicial de nulos
         df_pokedex = df_pokedex.dropna(subset=["Nome"])
         df_pokedex = df_pokedex[df_pokedex["Nome"] != ""]
-        lista_pokemon = sorted(df_pokedex["Nome"].unique())
         
-        pokemon_selecionado = st.selectbox("Pesquisar Espécime:", ["-- Selecione um Pokémon --"] + lista_pokemon)
+        # --- NOVIDADE: Criando a string de exibição para a lista ---
+        def formatar_linha_selecao(linha):
+            num = str(linha.get("Dex No.", "???")).split('.')[0] # Remove decimais se houver
+            nome = linha.get("Nome", "Desconhecido")
+            t1 = linha.get("Tipo 1", "???")
+            t2 = linha.get("Tipo 2", "")
+            
+            tipos = f"{t1}" + (f" / {t2}" if t2 and pd.notna(t2) else "")
+            return f"[Nº {num}] {nome} ({tipos})"
+
+        # Cria uma coluna nova no DataFrame chamada 'Exibicao'
+        df_pokedex["Exibicao"] = df_pokedex.apply(formatar_linha_selecao, axis=1)
         
-        if pokemon_selecionado != "-- Selecione um Pokémon --":
-            # Coleta a linha de dados unificada do monstrinho escolhido
-            poke_dados = df_pokedex[df_pokedex["Nome"] == pokemon_selecionado].iloc[0]
+        # Ordena a lista pelo número da Pokédex (se possível) ou por ordem alfabética
+        df_pokedex = df_pokedex.sort_values(by=["Dex No.", "Nome"], ascending=[True, True])
+        lista_exibicao = df_pokedex["Exibicao"].unique().tolist()
+        
+        # Seletor agora mostra a string bonitinha: [Nº 001] Nome (Tipo 1 / Tipo 2)
+        opcao_selecionada = st.selectbox("Escanear assinatura de energia:", ["-- Selecione um Pokémon --"] + lista_exibicao)
+        
+        if opcao_selecionada != "-- Selecione um Pokémon --":
+            # Resgata a linha correta cruzando com a coluna de Exibição
+            poke_dados = df_pokedex[df_pokedex["Exibicao"] == opcao_selecionada].iloc[0]
+            pokemon_selecionado = poke_dados["Nome"]
             
             # Cabeçalho da Dex
-            num_dex = poke_dados.get("Dex No.", "???")
+            num_dex = str(poke_dados.get("Dex No.", "???")).split('.')[0]
             st.markdown(f"## {pokemon_selecionado} `Nº {num_dex}`")
             
-            # Tipagem formatada
+            # Tipagem formatada em badges
             t1 = poke_dados.get("Tipo 1", "???")
             t2 = poke_dados.get("Tipo 2", None)
             tipos_str = f"`{t1}`" + (f" / `{t2}`" if t2 and pd.notna(t2) else "")
