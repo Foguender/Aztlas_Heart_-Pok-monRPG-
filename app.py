@@ -17,6 +17,7 @@ def conectar_banco():
 # --- BUSCA DE DADOS ---
 def carregar_dados_pokemon():
     conn = conectar_banco()
+    # Puxa os dados estruturados do banco
     query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
     df = pd.read_sql_query(query, conn)
     conn.close()
@@ -42,11 +43,10 @@ def buscar_detalhes_pokemon(pokemon_id):
     return poke_dados, desc_dados
 
 
-# --- CAPTURAR PARÂMETROS DA URL ---
-# Usamos a URL do navegador para saber qual Pokémon exibir (ex: ?id=10)
-parametros_url = st.query_params
+# --- INICIALIZAÇÃO DO ESTADO DE SESSÃO ---
+if "id_pokemon_selecionado" not in st.session_state:
+    st.session_state.id_pokemon_selecionado = None
 
-# --- CARREGAMENTO INICIAL DOS DADOS ---
 df_pokemon = carregar_dados_pokemon()
 
 # --- BARRA LATERAL (FILTROS) ---
@@ -88,16 +88,15 @@ df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
 
 # --- CORPO PRINCIPAL DO SITE ---
 
-# MODO 1: EXIBIR A FICHA DO POKÉMON SE ACESSADO VIA LINK
-if "id" in parametros_url:
-    id_selecionado = parametros_url["id"]
-
-    # Botão para voltar à lista principal
+# MODO 1: EXIBIR A FICHA DO POKÉMON SELECIONADO
+if st.session_state.id_pokemon_selecionado is not None:
     if st.button("⬅ Voltar para a Lista"):
-        st.query_params.clear()  # Limpa o id da URL para voltar à lista
+        st.session_state.id_pokemon_selecionado = None
         st.rerun()
 
-    poke, desc = buscar_detalhes_pokemon(int(id_selecionado))
+    poke, desc = buscar_detalhes_pokemon(
+        int(st.session_state.id_pokemon_selecionado)
+    )
 
     if poke:
         st.title(f"{poke[2]} {poke[1] if poke[1] else ''}")
@@ -129,71 +128,35 @@ if "id" in parametros_url:
             if poke[9]:
                 st.markdown(f"- **Oculta (Habilidade E):** {poke[9]}")
 
-# MODO 2: EXIBIR A LISTA PRINCIPAL COM LINKS NOS NOMES
+# MODO 2: EXIBIR A TABELA PRINCIPAL (MÉTODO DA CAIXA DE SELEÇÃO)
 else:
     st.title("PokéDex Completa")
     st.write(
-        f"Exibindo **{len(df_filtrado)}** Pokémon. Clique no nome de qualquer um para abrir os detalhes."
+        "Selecione a caixinha ao lado esquerdo de qualquer Pokémon para abrir sua ficha detalhada."
     )
 
-    # Criamos o cabeçalho da tabela em HTML/CSS para lembrar o estilo do Pokémon DB
-    html_tabela = """
-    <style>
-        .pokedex-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: sans-serif;
-        }
-        .pokedex-table th {
-            text-align: left;
-            padding: 10px;
-            background-color: #f2f2f2;
-            border-bottom: 2px solid #ddd;
-        }
-        .pokedex-table td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .pokedex-link {
-            color: #0066cc;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .pokedex-link:hover {
-            text-decoration: underline;
-        }
-    </style>
-    <table class="pokedex-table">
-        <tr>
-            <th>Dex No.</th>
-            <th>Nome</th>
-            <th>Tipo 1</th>
-            <th>Tipo 2</th>
-            <th>Habilidade 1</th>
-        </tr>
-    """
+    # Substitui os valores nulos (NaN) por traços para deixar a tabela visualmente limpa
+    df_tabela = df_filtrado.fillna("-")
 
-    # Preenchemos as linhas da tabela dinamicamente com os dados filtrados do banco
-    for _, row in df_filtrado.iterrows():
-        dex_no = row["Dex No."] if row["Dex No."] else "-"
-        nome = row["Nome"]
-        tipo1 = row["Tipo 1"]
-        tipo2 = row["Tipo 2"] if row["Tipo 2"] else "-"
-        hab1 = row["Habilidade 1"]
-        p_id = row["ID"]
+    # Exibe a tabela nativa do Streamlit com seleção de linha única ativa
+    evento_selecao = st.dataframe(
+        df_tabela,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
+    )
 
-        # O link aponta para a própria URL com o parâmetro ?id=X correspondente
-        html_tabela += f"""
-        <tr>
-            <td>{dex_no}</td>
-            <td><a class="pokedex-link" href="/?id={p_id}" target="_self">{nome}</a></td>
-            <td>{tipo1}</td>
-            <td>{tipo2}</td>
-            <td>{hab1}</td>
-        </tr>
-        """
-
-    html_tabela += "</table>"
-
-    # Renderiza a tabela HTML de forma segura no Streamlit
-    st.markdown(html_tabela, unsafe_allow_html=True)
+    # Captura o clique na caixa de seleção
+    if (
+        evento_selecao
+        and "selection" in evento_selecao
+        and "rows" in evento_selecao["selection"]
+    ):
+        linhas_selecionadas = evento_selecao["selection"]["rows"]
+        if len(linhas_selecionadas) > 0:
+            indice_linha = linhas_selecionadas[0]
+            # Puxa o ID correto baseado na linha que o usuário clicou
+            id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
+            st.session_state.id_pokemon_selecionado = id_pokemon
+            st.rerun()
