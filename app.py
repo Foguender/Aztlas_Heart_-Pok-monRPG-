@@ -14,6 +14,20 @@ def conectar_banco():
     return sqlite3.connect(caminho_banco)
 
 
+# --- REGRAS MATEMÁTICAS (CONVERSÃO POKE5E) ---
+def calcular_atributo_dnd(base_stat):
+    # Fórmula: ROUND(10 + (Base Stat - 70) / 15)
+    score = round(10 + (base_stat - 70) / 15)
+    # Aplica o limitador de 3 a 20 do Species Rating inicial
+    return max(3, min(20, score))
+
+
+def calcular_modificador(score):
+    # Fórmula clássica de D&D 5e: (Atributo - 10) // 2
+    mod = (score - 10) // 2
+    return f"+{mod}" if mod >= 0 else f"{mod}"
+
+
 # --- BUSCA DE DADOS ---
 def carregar_dados_pokemon():
     conn = conectar_banco()
@@ -27,36 +41,33 @@ def buscar_detalhes_completos(pokemon_id):
     conn = conectar_banco()
     cursor = conn.cursor()
 
-    # 1. Dados Gerais
+    # 1. Dados Gerais (Tabela pokemon)
     cursor.execute('SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
     gerais = cursor.fetchone()
 
-    # 2. Descrição RPG
+    # 2. Descrição RPG (Tabela descricao_pokedexrpg)
     cursor.execute(
         'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
         (pokemon_id,),
     )
     descricao = cursor.fetchone()
 
-    # 3. Base Stats
+    # 3. Base Stats (Tabela Base Stats)
     cursor.execute('SELECT * FROM "Base Stats" WHERE "ID" = ?', (pokemon_id,))
     stats = cursor.fetchone()
 
-    # 4. Breeding & Training
+    # 4. Breeding & Training (Tabela Training_Breeding)
     cursor.execute(
         'SELECT * FROM "Training_Breeding" WHERE "ID" = ?', (pokemon_id,)
     )
     breeding = cursor.fetchone()
 
-    # 5. Golpes / Moves (Buscando golpes associados ao ID do Pokémon)
-    # Nota: Ajuste os nomes das colunas conforme o seu esquema de golpes se necessário
+    # 5. Golpes / Moves (Tabela pokemon_moves)
     try:
         query_moves = 'SELECT "Nível", "Ataque", "Tipo", "Classe", "Poder", "Acurácia" FROM "pokemon_moves" WHERE "pokemon_id" = ? ORDER BY "Nível" ASC'
         moves_df = pd.read_sql_query(query_moves, conn, params=(pokemon_id,))
     except Exception:
-        moves_df = (
-            pd.DataFrame()
-        )  # Cria um DataFrame vazio caso a tabela ainda não esteja pronta
+        moves_df = pd.DataFrame()
 
     conn.close()
     return gerais, descricao, stats, breeding, moves_df
@@ -107,14 +118,12 @@ df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
 
 # --- CORPO PRINCIPAL DO SITE ---
 
-# MODO 1: EXIBIR A FICHA DETALHADA COM ABAS
+# MODO 1: EXIBIR A FICHA DETALHADA COM ABAS E CÁLCULOS
 if st.session_state.id_pokemon_selecionado is not None:
     if st.button("⬅ Voltar para a Lista"):
         st.session_state.id_pokemon_selecionado = None
         st.rerun()
 
-    # Busca todas as informações associadas ao ID nas diferentes tabelas
-    # Busca todas as informações associadas ao ID
     poke_geral, poke_desc, poke_stats, poke_breed, df_moves = (
         buscar_detalhes_completos(int(st.session_state.id_pokemon_selecionado))
     )
@@ -122,7 +131,7 @@ if st.session_state.id_pokemon_selecionado is not None:
     if poke_geral:
         st.title(f"{poke_geral[2]} {poke_geral[1] if poke_geral[1] else ''}")
 
-        # Agora com 4 abas conforme o planejamento
+        # Criação das 4 abas estruturadas
         aba1, aba2, aba3, aba4 = st.tabs(
             [
                 "📋 Dados Gerais",
@@ -164,11 +173,9 @@ if st.session_state.id_pokemon_selecionado is not None:
                         f"- **Oculta (Habilidade E):** {poke_geral[9]}"
                     )
 
-        # ABA 2: BASE STATS & ATRIBUTOS D&D
+        # ABA 2: BASE STATS & ATRIBUTOS D&D (Poke5e)
         with aba2:
-            st.subheader("Estatísticas Base de Pokémon")
             if poke_stats:
-                # Valores numéricos vindos do banco
                 hp, atk, de, spatk, spdef, spe = (
                     poke_stats[2],
                     poke_stats[3],
@@ -177,7 +184,9 @@ if st.session_state.id_pokemon_selecionado is not None:
                     poke_stats[6],
                     poke_stats[7],
                 )
-                bst = sum([hp, atk, de, spatk, spdef, spe])  # Calcula a BST
+                bst = sum([hp, atk, de, spatk, spdef, spe])
+
+                st.subheader("Estatísticas Base de Pokémon")
 
                 stats_dados = {
                     "Status": [
@@ -193,34 +202,81 @@ if st.session_state.id_pokemon_selecionado is not None:
                 }
                 df_stats = pd.DataFrame(stats_dados)
                 st.dataframe(df_stats, hide_index=True, use_container_width=True)
+
+                st.write("---")
+
+                # Processamento das Conversões matemáticas
+                con_score = calcular_atributo_dnd(hp)
+                str_score = calcular_atributo_dnd(atk)
+                dex_score = calcular_atributo_dnd(de)
+                int_score = calcular_atributo_dnd(spatk)
+                wis_score = calcular_atributo_dnd(spdef)
+                cha_score = calcular_atributo_dnd(spe)
+
+                mod_con = calcular_modificador(con_score)
+                mod_str = calcular_modificador(str_score)
+                mod_dex = calcular_modificador(dex_score)
+                mod_int = calcular_modificador(int_score)
+                mod_wis = calcular_modificador(wis_score)
+                mod_cha = calcular_modificador(cha_score)
+
+                # Cálculo de AC Natural (10 + Mod_Dex + Bônus Esp. baseado em Sp.Def)
+                mod_dex_num = (dex_score - 10) // 2
+                mod_wis_num = (wis_score - 10) // 2
+                bonus_esp = max(0, mod_wis_num) if mod_wis_num > 0 else 0
+                ac_total = 10 + mod_dex_num + bonus_esp
+
+                st.subheader("🎲 Atributos Convertidos para RPG (Poke5e)")
+                st.info(f"🛡️ **Classe de Armadura (AC Natural):** {ac_total}")
+
+                # Exibição paralela dos Atributos
+                c1, c2, c3, c4, c5, c6 = st.columns(6)
+                with c1:
+                    st.metric(
+                        label="STR (Força)",
+                        value=str_score,
+                        delta=mod_str,
+                        delta_color="off",
+                    )
+                with c2:
+                    st.metric(
+                        label="DEX (Destreza)",
+                        value=dex_score,
+                        delta=mod_dex,
+                        delta_color="off",
+                    )
+                with c3:
+                    st.metric(
+                        label="CON (Const.)",
+                        value=con_score,
+                        delta=mod_con,
+                        delta_color="off",
+                    )
+                with c4:
+                    st.metric(
+                        label="INT (Intelig.)",
+                        value=int_score,
+                        delta=mod_int,
+                        delta_color="off",
+                    )
+                with c5:
+                    st.metric(
+                        label="WIS (Sabed.)",
+                        value=wis_score,
+                        delta=mod_wis,
+                        delta_color="off",
+                    )
+                with c6:
+                    st.metric(
+                        label="CHA (Carisma)",
+                        value=cha_score,
+                        delta=mod_cha,
+                        delta_color="off",
+                    )
             else:
-                st.info("Dados de Base Stats não encontrados.")
-
-            st.write("---")
-
-            # SEÇÃO ADICIONADA: ATRIBUTOS D&D 5E
-            st.subheader("🎲 Atributos do Sistema RPG (D&D 5e)")
-            st.write(
-                "Estes são os atributos utilizados para rolagens e testes de mesa:"
-            )
-
-            # Criando 6 colunas paralelas para exibir os atributos estilo ficha de D&D
-            c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-            # Nota: Como esses valores variam no seu RPG, deixei blocos visuais prontos.
-            # Se você tiver esses atributos salvos em alguma tabela (ex: Força, Destreza no banco), podemos puxá-los depois!
-            with c1:
-                st.metric(label="FOR (Str)", value="10", delta="0")
-            with c2:
-                st.metric(label="DES (Dex)", value="12", delta="+1")
-            with c3:
-                st.metric(label="CON (Con)", value="14", delta="+2")
-            with c4:
-                st.metric(label="INT (Int)", value="6", delta="-2")
-            with c5:
-                st.metric(label="SAB (Wis)", value="12", delta="+1")
-            with c6:
-                st.metric(label="CAR (Cha)", value="10", delta="0")
+                st.info(
+                    "Dados de Base Stats não encontrados para este Pokémon."
+                )
 
         # ABA 3: BREEDING & TRAINING
         with aba3:
@@ -250,7 +306,7 @@ if st.session_state.id_pokemon_selecionado is not None:
                     "Nenhum golpe cadastrado ou encontrado para este Pokémon no momento."
                 )
 
-# MODO 2: EXIBIR A TABELA PRINCIPAL (ESTILO POKÉMON DB)
+# MODO 2: EXIBIR A TABELA PRINCIPAL (MÉTODO DA CAIXA DE SELEÇÃO)
 else:
     st.title("PokéDex Completa")
     st.write(
@@ -274,7 +330,7 @@ else:
     ):
         linhas_selecionadas = evento_selecao["selection"]["rows"]
         if len(linhas_selecionadas) > 0:
-            indice_linha = linhas_selecionadas[0]
+            indice_linha = lines_selecionadas[0]
             id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
             st.session_state.id_pokemon_selecionado = id_pokemon
             st.rerun()
