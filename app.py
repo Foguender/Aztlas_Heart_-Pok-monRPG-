@@ -1,36 +1,35 @@
+import os
 import sqlite3
+import pandas as pd
 import streamlit as st
 
 # Configuração da página estilo PokéDex
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
 
+# --- CONEXÃO COM O BANCO DE DADOS ---
 def conectar_banco():
-    # Substitua pelo nome exato do seu arquivo .db se for diferente
-    return sqlite3.connect("pokedex aztlas - Copia.db")
+    caminho_atual = os.path.dirname(__file__)
+    caminho_banco = os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
+    return sqlite3.connect(caminho_banco)
 
 
-# --- FUNÇÕES DE BUSCA ---
-def buscar_todos_pokemon():
+# --- BUSCA DE DADOS ---
+def carregar_dados_pokemon():
     conn = conectar_banco()
-    cursor = conn.cursor()
-    # Mudamos as aspas duplas para crases para evitar conflitos de sintaxe no servidor
-    cursor.execute(
-        "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
-    )
-    dados = cursor.fetchall()
+    # Carrega a tabela inteira do banco de dados diretamente para o Pandas
+    query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
+    df = pd.read_sql_query(query, conn)
     conn.close()
-    return dados
+    return df
 
 
 def buscar_detalhes_pokemon(pokemon_id):
     conn = conectar_banco()
     cursor = conn.cursor()
 
-    # Busca dados físicos e de habilidades
-    cursor.execute(
-        'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,)
-    )
+    # Busca dados físicos da tabela pokemon
+    cursor.execute('SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
     poke_dados = cursor.fetchone()
 
     # Busca a descrição RPG correspondente
@@ -44,29 +43,76 @@ def buscar_detalhes_pokemon(pokemon_id):
     return poke_dados, desc_dados
 
 
-# --- SISTEMA DE NAVEGAÇÃO ---
-# Inicializa o estado da sessão para controlar qual página exibir
-if "pokemon_selecionado" not in st.session_state:
-    st.session_state.pokemon_selecionado = None
+# --- CARREGAMENTO INICIAL ---
+df_pokemon = carregar_dados_pokemon()
 
-# Botão para voltar à lista principal
-if st.session_state.pokemon_selecionado is not None:
-    if st.button("⬅ Voltar para a Lista"):
-        st.session_state.pokemon_selecionado = None
-        st.rerun()
+# --- BARRA LATERAL: FILTROS E BUSCA ---
+st.sidebar.header("🔍 Filtros da Pokédex")
 
-# --- PÁGINA 1: DETALHES DO POKÉMON ---
-if st.session_state.pokemon_selecionado:
-    poke_id = st.session_state.pokemon_selecionado
-    poke, desc = buscar_detalhes_pokemon(poke_id)
+# 1. Filtro por Nome
+filtro_nome = st.sidebar.text_input("Buscar por Nome:", "")
+
+# 2. Filtro por Tipo (Pega todos os tipos únicos existentes no banco)
+tipos_disponiveis = sorted(
+    list(
+        set(df_pokemon["Tipo 1"].dropna()) | set(df_pokemon["Tipo 2"].dropna())
+    )
+)
+filtro_tipo = st.sidebar.selectbox(
+    "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
+)
+
+# 3. Organizador (Ordenação de Colunas)
+coluna_ordenar = st.sidebar.selectbox(
+    "Ordenar por:", options=df_pokemon.columns.tolist(), index=2
+)  # Padrão: Nome
+ordem_crescente = st.sidebar.radio("Ordem:", ["Crescente", "Decrescente"])
+ascendente = True if ordem_crescente == "Crescente" else False
+
+# --- APLICAÇÃO DOS FILTROS NO PANDAS ---
+df_filtrado = df_pokemon.copy()
+
+# Aplicando busca por nome
+if filtro_nome:
+    df_filtrado = df_filtrado[
+        df_filtrado["Nome"].str.contains(filtro_nome, case=False, na=False)
+    ]
+
+# Aplicando filtro por tipo
+if filtro_tipo != "Todos":
+    df_filtrado = df_filtrado[
+        (df_filtrado["Tipo 1"] == filtro_tipo)
+        | (df_filtrado["Tipo 2"] == filtro_tipo)
+    ]
+
+# Aplicando a ordenação em qualquer coluna escolhida
+df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
+
+# --- SELEÇÃO PARA VER DETALHES ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📄 Ficha do Pokémon")
+
+# Cria uma lista de opções para a caixa de seleção interna
+opcoes_pokemon = {"Ver a Lista Completa": None}
+for _, row in df_filtrado.iterrows():
+    opcoes_pokemon[f"#{row['ID']} - {row['Nome']}"] = row["ID"]
+
+pokemon_escolhido = st.sidebar.selectbox(
+    "Selecione para abrir os detalhes:", options=list(opcoes_pokemon.keys())
+)
+id_selecionado = opcoes_pokemon[pokemon_escolhido]
+
+# --- CORPO PRINCIPAL DO SITE ---
+
+# PÁGINA DE DETALHES (Se um Pokémon foi selecionado no menu lateral)
+if id_selecionado is not None:
+    poke, desc = buscar_detalhes_pokemon(int(id_selecionado))
 
     if poke:
         st.title(f"{poke[2]} {poke[1] if poke[1] else ''}")
 
         col1, col2 = st.columns([1, 2])
-
         with col1:
-            # Placeholder para imagem (caso queira adicionar no futuro)
             st.image(
                 "https://via.placeholder.com/250",
                 caption=poke[2],
@@ -92,40 +138,13 @@ if st.session_state.pokemon_selecionado:
             if poke[9]:
                 st.markdown(f"- **Oculta (Habilidade E):** {poke[9]}")
 
-# --- PÁGINA 2: LISTA ESTILO POKÉMON DB (SEM BASE STATS) ---
+# PÁGINA PRINCIPAL: LISTA ESTILO POKÉMON DB
 else:
     st.title("PokéDex Completa")
     st.write(
-        "Clique no botão **Ver Detalhes** de qualquer Pokémon para abrir sua ficha."
+        f"Exibindo **{len(df_filtrado)}** Pokémon com os filtros atuais. Use a barra lateral para ver detalhes de um Pokémon específico."
     )
 
-    lista_pokemon = buscar_todos_pokemon()
-
-    # Cabeçalho da Tabela customizada
-    header_cols = st.columns([1, 1, 2, 1, 1, 2, 1])
-    header_cols[0].markdown("**ID**")
-    header_cols[1].markdown("**Dex No.**")
-    header_cols[2].markdown("**Nome**")
-    header_cols[3].markdown("**Tipo 1**")
-    header_cols[4].markdown("**Tipo 2**")
-    header_cols[5].markdown("**Habilidade Principal**")
-    header_cols[6].markdown("**Ação**")
-
-    st.write("---")
-
-    # Linhas da tabela
-    for poke in lista_pokemon:
-        p_id, dex_no, nome, tipo1, tipo2, hab1 = poke
-        cols = st.columns([1, 1, 2, 1, 1, 2, 1])
-
-        cols[0].write(str(p_id))
-        cols[1].write(str(dex_no) if dex_no else "-")
-        cols[2].write(f"**{nome}**")
-        cols[3].write(tipo1)
-        cols[4].write(tipo2 if tipo2 else "-")
-        cols[5].write(hab1)
-
-        # Botão interativo para abrir a página do Pokémon específico
-        if cols[6].button("Ver Detalhes", key=f"btn_{p_id}"):
-            st.session_state.pokemon_selecionado = p_id
-            st.rerun()
+    # Exibe a tabela interativa lindamente na tela.
+    # O usuário também pode clicar no topo de qualquer coluna da tabela se quiser reordenar por lá!
+    st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
