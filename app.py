@@ -153,6 +153,7 @@ with abas[0]:
         st.warning("A Pokédex carregou corretamente, mas não encontrou nenhuma entrada válida.")
 
 # --- ABA 2: ITENS (Mercado Dinâmico com Flutuação de Preço) ---
+# --- ABA 2: ITENS (Mercado Dinâmico com Flutuação de Preço) ---
 with abas[1]:
     st.title("🎒 Inventário e Mercado")
     
@@ -194,10 +195,10 @@ with abas[1]:
         
         item_pesquisado = st.selectbox("Pesquisar Item no Acervo do Mestre:", ["-- Selecione um Item --"] + list(banco_itens.keys()))
         
-       if item_pesquisado != "-- Selecione um Item --":
+        if item_pesquisado != "-- Selecione um Item --":
             dados = banco_itens[item_pesquisado]
             
-            # max(1, ...) garante que o preço final seja de pelo menos 1 Pokédólar (₽), mesmo com descontos massivos
+            # Garante que o preço nunca seja menor que 1
             preco_calculado = max(1, int(dados["preco_base"] * multiplicador))
             
             st.markdown(f"#### 📦 {item_pesquisado}")
@@ -206,7 +207,6 @@ with abas[1]:
             c1, c2 = st.columns(2)
             c1.metric(label="Preço Comercial Flutuante", value=f"{preco_calculado}₽")
             
-            # Calcula a diferença de preço exibindo o sinal correto no delta
             diferenca = preco_calculado - dados['preco_base']
             c2.metric(label="Preço Base (Fixo)", value=f"{dados['preco_base']}₽", delta=f"{diferenca}₽")
     else:
