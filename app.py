@@ -14,11 +14,11 @@ def conectar_banco():
     return sqlite3.connect(caminho_banco)
 
 
-# --- REGRAS MATEMÁTICAS (CONVERSÃO POKE5E) ---
+# --- REGRAS MATEMÁTICAS (CONVERSÃO POKE5E ATUALIZADA) ---
 def calcular_atributo_dnd(base_stat):
-    # Fórmula: ROUND(10 + (Base Stat - 70) / 15)
-    score = round(10 + (base_stat - 70) / 15)
-    # Aplica o limitador de 3 a 20 do Species Rating inicial
+    # Nova fórmula: Mais fiel à progressão de monstros do D&D 5e
+    score = round(10 + (base_stat - 60) / 10)
+    # Aplica o limitador padrão de 3 a 20 para espécies iniciais
     return max(3, min(20, score))
 
 
@@ -206,8 +206,7 @@ if st.session_state.id_pokemon_selecionado is not None:
                 st.write("---")
                 st.subheader("🎲 Atributos Convertidos para RPG (Poke5e)")
 
-                # --- SISTEMA DE AJUSTE MANUAL POR NOME (OVERRIDE) ---
-                # Cadastramos as fichas oficiais do Poke5e direto pelo nome exato do Pokémon
+                # Dicionário para fichas oficiais ou ajustes manuais específicos
                 fichas_customizadas = {
                     "Pitya": {
                         "STR": 12,
@@ -219,14 +218,11 @@ if st.session_state.id_pokemon_selecionado is not None:
                         "HP_RPG": 17,
                         "AC": 12,
                     }
-                    # Você pode adicionar outros Pokémon oficiais aqui embaixo seguindo o mesmo padrão!
                 }
 
-                # Puxa o nome atual do Pokémon (removendo espaços extras para garantir o encaixe)
                 nome_atual = str(poke_geral[2]).strip()
 
                 if nome_atual in fichas_customizadas:
-                    # Se o nome estiver na lista, puxa a sua ficha perfeitinha do Poke5e
                     c = fichas_customizadas[nome_atual]
                     str_score, dex_score, con_score = (
                         c["STR"],
@@ -241,21 +237,26 @@ if st.session_state.id_pokemon_selecionado is not None:
                     hp_rpg = c["HP_RPG"]
                     ac_total = c["AC"]
                 else:
-                    # Se não estiver cadastrado na mão, o sistema roda o cálculo aproximado
-                    con_score = calcular_atributo_dnd(hp)
-                    str_score = calcular_atributo_dnd(atk)
-                    dex_score = calcular_atributo_dnd(de)
-                    int_score = calcular_atributo_dnd(spatk)
-                    wis_score = calcular_atributo_dnd(spdef)
-                    cha_score = calcular_atributo_dnd(spe)
+                    # --- SISTEMA DE MAPEAMENTO CORRIGIDO E ATUALIZADO ---
+                    str_score = calcular_atributo_dnd(atk)    # Attack -> Força
+                    dex_score = calcular_atributo_dnd(spe)    # Speed -> Destreza
+                    con_score = calcular_atributo_dnd(hp)     # HP -> Constituição
+                    int_score = calcular_atributo_dnd(spatk)  # Sp. Atk -> Inteligência
+                    wis_score = calcular_atributo_dnd(spdef)  # Sp. Def -> Sabedoria
+                    cha_score = 10                            # Carisma base equilibrado
 
-                    hp_rpg = 10 + (con_score - 10) // 2
+                    # Extração numérica de modificadores para contas internas
                     mod_dex_num = (dex_score - 10) // 2
-                    mod_wis_num = (wis_score - 10) // 2
-                    bonus_esp = max(0, mod_wis_num) if mod_wis_num > 0 else 0
-                    ac_total = 10 + mod_dex_num + bonus_esp
+                    mod_con_num = (con_score - 10) // 2
+                    
+                    # Defesa gera bônus de Armadura Natural (excedente a partir de 60 base)
+                    bonus_armadura_natural = max(0, round((de - 60) / 15)) 
+                    ac_total = 10 + mod_dex_num + bonus_armadura_natural
 
-                # Calcula os modificadores visuais (+2, -1, etc.)
+                    # Cálculo progressivo para os pontos de vida iniciais no RPG
+                    hp_rpg = max(5, 10 + mod_con_num + (hp // 10))
+
+                # Modificadores visuais salvos em strings (+2, -1, etc.)
                 mod_str = calcular_modificador(str_score)
                 mod_dex = calcular_modificador(dex_score)
                 mod_con = calcular_modificador(con_score)
@@ -277,7 +278,7 @@ if st.session_state.id_pokemon_selecionado is not None:
 
                 st.write("")
 
-                # Grid com os 6 atributos principais estilo ficha D&D
+                # Grid dos 6 atributos clássicos de D&D
                 c1, c2, c3, c4, c5, c6 = st.columns(6)
                 with c1:
                     st.metric(
@@ -378,7 +379,7 @@ else:
     ):
         linhas_selecionadas = evento_selecao["selection"]["rows"]
         if len(linhas_selecionadas) > 0:
-            indice_linha = linhas_selecionadas[0]  # <-- Corrigido!
+            indice_linha = linhas_selecionadas[0]
             id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
             st.session_state.id_pokemon_selecionado = id_pokemon
             st.rerun()
