@@ -7,7 +7,7 @@ st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide"
 
 def conectar_banco():
     # Substitua pelo nome exato do seu arquivo .db se for diferente
-    return sqlite3.connect("pokedex_aztlas.db")
+    return sqlite3.connect("pokedex aztlas - Copia.db")
 
 
 # --- FUNÇÕES DE BUSCA ---
