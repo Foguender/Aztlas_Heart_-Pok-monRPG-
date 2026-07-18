@@ -100,19 +100,18 @@ with abas[2]:
         nome_arquivo_mapa = ""
         
         # 2. Associação direta com os nomes exatos das suas pastas e arquivos
+        # 2. Associação direta com os nomes exatos das suas pastas e arquivos
         if lente == "Full Map":
-            nome_arquivo_mapa = "Full/full_map.png" # Ajuste o 'full_map.png' para o nome real do seu arquivo cheio
+            nome_arquivo_mapa = "Full/full_map.png"
             
         elif lente == "Half Map":
-            # Seleção entre as suas 2 imagens da pasta Half
             metade = st.radio("Selecione a Metade:", ["Metade 1", "Metade 2"], horizontal=True)
             if metade == "Metade 1":
-                nome_arquivo_mapa = "Half/half_map_1.png" # Nome real do primeiro arquivo na pasta Half
+                nome_arquivo_mapa = "Half/half_map_1.png"
             else:
-                nome_arquivo_mapa = "Half/half_map_2.png" # Nome real do segundo arquivo na pasta Half
+                nome_arquivo_mapa = "Half/half_map_2.png"
                 
         elif lente == "Quarter Map":
-            # Seleção entre as suas 4 imagens da pasta Quarter
             quadrante = st.selectbox("Selecione o Quadrante:", ["Noroeste (NW)", "Nordeste (NE)", "Sudoeste (SW)", "Sudeste (SE)"])
             
             if quadrante == "Noroeste (NW)":
