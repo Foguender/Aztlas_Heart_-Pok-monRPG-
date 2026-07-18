@@ -103,15 +103,15 @@ with abas[2]:
         
         # 2. Lógica adaptada para as subdivisões reais das imagens
         if lente == "Full Map":
-            nome_arquivo_mapa = "full_map.png"
+            nome_arquivo_mapa = "MApa Aztlas (1).png"
             
         elif lente == "Half Map":
             # 2 Imagens: Leste ou Oeste, Norte ou Sul (ajuste as opções conforme você nomeou os arquivos)
             metade = st.radio("Selecione a Metade:", ["Metade 1 (Oeste)", "Metade 2 (Leste)"], horizontal=True)
             if metade == "Metade 1 (Oeste)":
-                nome_arquivo_mapa = "half_map_1.png"
+                nome_arquivo_mapa = "MApa Aztlas (2) - Half Left.png"
             else:
-                nome_arquivo_mapa = "half_map_2.png"
+                nome_arquivo_mapa = "MApa Aztlas (2) - Half Right.png"
                 
         elif lente == "Quarter Map":
             # 4 Imagens: Os 4 quadrantes clássicos
