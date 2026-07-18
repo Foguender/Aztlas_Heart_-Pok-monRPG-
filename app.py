@@ -378,7 +378,7 @@ else:
     ):
         linhas_selecionadas = evento_selecao["selection"]["rows"]
         if len(linhas_selecionadas) > 0:
-            indice_linha = lines_selecionadas[0]
+            indice_linha = linhas_selecionadas[0]  # <-- Corrigido!
             id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
             st.session_state.id_pokemon_selecionado = id_pokemon
             st.rerun()
