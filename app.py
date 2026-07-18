@@ -85,7 +85,7 @@ with abas[2]:
     if st.session_state.modo_mestre:
         st.markdown("""
         <div style="background-color: #742a2a; color: #ffffff; padding: 12px; border-radius: 6px; border-left: 5px solid #feb2b2; margin-bottom: 15px;">
-            <strong>👁️ VISÃO DE MESTRE:</strong> Há uma armadilha ativa e um evento climático secreto planejado para o quadrante SE.
+            <strong>👁️ VISÃO DE MESTRE:</strong> Os segredos e ferramentas de calibração estão visíveis para você.
         </div>
         """, unsafe_allow_html=True)
 
@@ -94,25 +94,51 @@ with abas[2]:
     
     with col_mapa:
         st.subheader("Visualizador de Lentes")
-        lente = st.selectbox("Selecione o nível de Zoom (Lente):", ["Full Map", "Half Map", "Quarter Map"])
         
-        # Define o arquivo de imagem com base na lente escolhida
-        caminho_mapa = f"mapas/{lente.lower().replace(' ', '_')}.png"
+        # 1. Seleção do nível geral de zoom
+        lente = st.selectbox("Selecione o nível de Lente (Zoom):", ["Full Map", "Half Map", "Quarter Map"])
         
-        # Fallback caso a imagem ainda não exista localmente/no GitHub
-        if os.path.exists(caminho_mapa):
-            # Captura o clique nas coordenadas da imagem
-            coordenadas = streamlit_image_coordinates(caminho_mapa, key=f"mapa_{lente}")
+        # Variável para guardar o nome exato do arquivo final
+        nome_arquivo_mapa = ""
+        
+        # 2. Lógica adaptada para as subdivisões reais das imagens
+        if lente == "Full Map":
+            nome_arquivo_mapa = "full_map.png"
+            
+        elif lente == "Half Map":
+            # 2 Imagens: Leste ou Oeste, Norte ou Sul (ajuste as opções conforme você nomeou os arquivos)
+            metade = st.radio("Selecione a Metade:", ["Metade 1 (Oeste)", "Metade 2 (Leste)"], horizontal=True)
+            if metade == "Metade 1 (Oeste)":
+                nome_arquivo_mapa = "half_map_1.png"
+            else:
+                nome_arquivo_mapa = "half_map_2.png"
+                
+        elif lente == "Quarter Map":
+            # 4 Imagens: Os 4 quadrantes clássicos
+            quadrante = st.selectbox("Selecione o Quadrante:", ["Noroeste (NW)", "Nordeste (NE)", "Sudoeste (SW)", "Sudoeste (SE)"])
+            # Transforma a seleção no nome do seu arquivo (ex: quarter_nw.png)
+            sufixo = quadrante.split("(")[1].replace(")", "").lower().strip()
+            nome_arquivo_mapa = f"quarter_{sufixo}.png"
+        
+        # Monta o caminho final para o Streamlit buscar na pasta
+        caminho_final = f"mapas/{nome_arquivo_mapa}"
+        
+        # 3. Renderização e captura do clique
+        if os.path.exists(caminho_final):
+            # O key muda dinamicamente baseado no arquivo para não dar conflito no Streamlit
+            coordenadas = streamlit_image_coordinates(caminho_final, key=f"click_{nome_arquivo_mapa}")
         else:
-            st.warning(f"Insira o arquivo de imagem em: `{caminho_mapa}` para ativar o mapa interativo.")
+            st.warning(f"⚠️ Arquivo não encontrado no GitHub: `{caminho_final}`")
+            st.info("Verifique se o nome do arquivo na sua pasta 'mapas' está exatamente igual ao listado acima.")
             coordenadas = None
             
         # Ferramenta de Calibração (Dev Mode) automática para o Mestre
         if st.session_state.modo_mestre and coordenadas:
             st.markdown("---")
-            st.markdown("### 🛠️ Dev Mode: Calibrador de Bounding Boxes")
-            st.write(f"Último clique registrado: **X:** `{coordenadas['x']}`, **Y:** `{coordenadas['y']}`")
-            st.code(f"# Use estas coordenadas para montar suas caixas de colisão:\n[X_min, X_max, Y_min, Y_max]")
+            st.markdown("### 🛠️ Dev Mode: Calibrador")
+            st.write(f"Mapa ativo: `{nome_arquivo_mapa}`")
+            st.write(f"Clique registrado: **X:** `{coordenadas['x']}`, **Y:** `{coordenadas['y']}`")
+            st.code(f"# Bounding Box para este clique específico:\n[X_min, X_max, Y_min, Y_max]")
 
     with col_info:
         st.subheader("🛰️ Scanner de Região")
@@ -121,30 +147,18 @@ with abas[2]:
             x = coordenadas["x"]
             y = coordenadas["y"]
             
-            # --------------------------------------------------------------
-            # LOGICA DE BOUNDING BOXES (Exemplo Prático)
-            # --------------------------------------------------------------
-            # Se o clique estiver dentro do intervalo X e Y configurado:
-            if (100 <= x <= 250) and (150 <= y <= 300):
-                st.markdown("### 🏔️ Cidade Inicial: Neo-Aztlas")
-                st.write("Uma metrópole tecnológica cercada por muralhas antigas.")
-                st.metric(label="População", value="12.500")
-                st.metric(label="Alinhamento", value="Neutro")
-                
-                if st.session_state.modo_mestre:
-                    st.error("⚠️ NOTA DO MESTRE: A guilda dos ladrões controla os subterrâneos daqui.")
+            # Aqui entra a sua checagem de Bounding Boxes. 
+            # Como agora temos mapas diferentes, você pode filtrar pelo mapa ativo:
+            st.write(f"Buscando pontos no mapa `{nome_arquivo_mapa}`...")
             
-            elif (400 <= x <= 600) and (50 <= y <= 200):
-                st.markdown("### 🌲 Floresta dos Murmúrios")
-                st.write("Uma densa mata onde bússolas falham e sons estranhos ecoam.")
-                st.warning("Efeito Ativo: Visibilidade Reduzida (-2 em testes de Percepção).")
-            
+            # EXEMPLO: Se o clique foi no Quadrante Noroeste (quarter_nw.png)
+            if nome_arquivo_mapa == "quarter_nw.png" and (50 <= x <= 150) and (50 <= y <= 150):
+                st.markdown("### 🏕️ Acampamento Rebelde")
+                st.write("Um ponto escondido usado por treinadores renegados.")
             else:
-                st.markdown("### 🏜️ Terras Desconhecidas")
-                st.write(f"Coordenadas atuais mapeadas pelo Visor: X:{x}, Y:{y}.")
-                st.info("Nenhum ponto de interesse descoberto ou configurado neste quadrante ainda.")
+                st.info(f"Coordenadas registradas neste clique: X={x}, Y={y}. Nenhum segredo mapeado aqui ainda.")
         else:
-            st.info("Clique em qualquer ponto do mapa à esquerda para escanear a região correspondente.")
+            st.info("Clique em qualquer ponto do mapa ativo para escanear a área.")
 
 # ------------------------------------------------------------------
 # ABA 4: ESCUDO DO MESTRE (EXCLUSIVA E CONDICIONAL)
