@@ -82,24 +82,25 @@ with abas[0]:
         df_pokedex = df_pokedex.dropna(subset=["Nome"])
         df_pokedex = df_pokedex[df_pokedex["Nome"] != ""]
         
-        # --- NOVIDADE: Criando a string de exibição para a lista ---
+        # Converte o campo 'Dex No.' para numérico para garantir a ordenação matemática correta (1, 2, 10 em vez de 1, 10, 2)
+        df_pokedex["Dex No. Numérico"] = pd.to_numeric(df_pokedex["Dex No."], errors='coerce').fillna(999)
+        
+        # --- Formatação da linha de exibição ---
         def formatar_linha_selecao(linha):
-            num = str(linha.get("Dex No.", "???")).split('.')[0] # Remove decimais se houver
+            num = int(linha["Dex No. Numérico"])
+            num_str = f"{num:03d}" if num != 999 else "???"
             nome = linha.get("Nome", "Desconhecido")
             t1 = linha.get("Tipo 1", "???")
             t2 = linha.get("Tipo 2", "")
             
             tipos = f"{t1}" + (f" / {t2}" if t2 and pd.notna(t2) else "")
-            return f"[Nº {num}] {nome} ({tipos})"
+            return f"[Nº {num_str}] {nome} ({tipos})"
 
-        # Cria uma coluna nova no DataFrame chamada 'Exibicao'
+        # Cria a coluna de exibição e ordena estritamente pelo ID numérico
         df_pokedex["Exibicao"] = df_pokedex.apply(formatar_linha_selecao, axis=1)
-        
-        # Ordena a lista pelo número da Pokédex (se possível) ou por ordem alfabética
-        df_pokedex = df_pokedex.sort_values(by=["Dex No.", "Nome"], ascending=[True, True])
+        df_pokedex = df_pokedex.sort_values(by="Dex No. Numérico", ascending=True)
         lista_exibicao = df_pokedex["Exibicao"].unique().tolist()
         
-        # Seletor agora mostra a string bonitinha: [Nº 001] Nome (Tipo 1 / Tipo 2)
         opcao_selecionada = st.selectbox("Escanear assinatura de energia:", ["-- Selecione um Pokémon --"] + lista_exibicao)
         
         if opcao_selecionada != "-- Selecione um Pokémon --":
