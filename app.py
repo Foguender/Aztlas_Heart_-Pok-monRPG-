@@ -14,9 +14,9 @@ def conectar_banco():
 def buscar_todos_pokemon():
     conn = conectar_banco()
     cursor = conn.cursor()
-    # Busca os dados principais para a tabela inicial
+    # Mudamos as aspas duplas para crases para evitar conflitos de sintaxe no servidor
     cursor.execute(
-        'SELECT "ID", "Dex No.", "Nome", "Tipo 1", "Tipo 2", "Habilidade 1" FROM pokemon'
+        "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
     )
     dados = cursor.fetchall()
     conn.close()
