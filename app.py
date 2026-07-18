@@ -42,14 +42,14 @@ def buscar_detalhes_pokemon(pokemon_id):
     return poke_dados, desc_dados
 
 
-# --- INICIALIZAÇÃO DO ESTADO DE SESSÃO ---
-# Controla se estamos vendo a lista ou a ficha de um Pokémon específico
-if "id_pokemon_selecionado" not in st.session_state:
-    st.session_state.id_pokemon_selecionado = None
+# --- CAPTURAR PARÂMETROS DA URL ---
+# Usamos a URL do navegador para saber qual Pokémon exibir (ex: ?id=10)
+parametros_url = st.query_params
 
+# --- CARREGAMENTO INICIAL DOS DADOS ---
 df_pokemon = carregar_dados_pokemon()
 
-# --- BARRA LATERAL (APENAS OS FILTROS AGORA) ---
+# --- BARRA LATERAL (FILTROS) ---
 st.sidebar.header("🔍 Filtros da Pokédex")
 
 filtro_nome = st.sidebar.text_input("Buscar por Nome:", "")
@@ -88,16 +88,16 @@ df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
 
 # --- CORPO PRINCIPAL DO SITE ---
 
-# MODO 1: EXIBIR A FICHA DO POKÉMON SELECIONADO
-if st.session_state.id_pokemon_selecionado is not None:
+# MODO 1: EXIBIR A FICHA DO POKÉMON SE ACESSADO VIA LINK
+if "id" in parametros_url:
+    id_selecionado = parametros_url["id"]
+
     # Botão para voltar à lista principal
     if st.button("⬅ Voltar para a Lista"):
-        st.session_state.id_pokemon_selecionado = None
+        st.query_params.clear()  # Limpa o id da URL para voltar à lista
         st.rerun()
 
-    poke, desc = buscar_detalhes_pokemon(
-        int(st.session_state.id_pokemon_selecionado)
-    )
+    poke, desc = buscar_detalhes_pokemon(int(id_selecionado))
 
     if poke:
         st.title(f"{poke[2]} {poke[1] if poke[1] else ''}")
@@ -129,32 +129,37 @@ if st.session_state.id_pokemon_selecionado is not None:
             if poke[9]:
                 st.markdown(f"- **Oculta (Habilidade E):** {poke[9]}")
 
-# MODO 2: EXIBIR A TABELA PRINCIPAL (ESTILO POKÉMON DB)
+# MODO 2: EXIBIR A LISTA PRINCIPAL COM LINKS NOS NOMES
 else:
     st.title("PokéDex Completa")
     st.write(
-        "Selecione a caixinha ao lado esquerdo de qualquer Pokémon para abrir sua ficha detalhada."
+        f"Exibindo **{len(df_filtrado)}** Pokémon. Clique no nome de qualquer um para abrir os detalhes."
     )
 
-    # st.dataframe configurado para capturar eventos de seleção/clique de linha única
-    evento_selecao = st.dataframe(
-        df_filtrado,
+    # Criamos uma nova coluna temporária chamada "Link" que gera o link dinâmico da URL para cada Pokémon
+    # Usamos o target="_self" para abrir a ficha na mesma aba do navegador
+    df_exibicao = df_filtrado.copy()
+    df_exibicao["Link"] = df_exibicao["ID"].apply(lambda x: f"/?id={x}")
+
+    # Removemos a visualização da coluna ID para ficar mais limpo, se preferir
+    st.data_editor(
+        df_exibicao,
         use_container_width=True,
         hide_index=True,
-        on_select="rerun",  # Faz o site recarregar ao clicar na linha
-        selection_mode="single-row",  # Permite selecionar apenas um Pokémon por vez
+        column_order=[
+            "Dex No.",
+            "Nome",
+            "Tipo 1",
+            "Tipo 2",
+            "Habilidade 1",
+        ],  # Define a ordem visual das colunas
+        column_config={
+            "Nome": st.column_config.LinkColumn(
+                "Nome",
+                display_text=r"^.*$",  # Faz o texto do link ser o próprio Nome do Pokémon
+                help="Clique para ver os detalhes",
+            ),
+            "Link": None,  # Esconde a coluna de links brutos
+        },
+        disabled=True,  # Impede que o usuário digite ou edite a tabela
     )
-
-    # Se o usuário clicou em alguma linha, descobrimos qual Pokémon foi e guardamos o ID dele
-    if (
-        evento_selecao
-        and "selection" in evento_selecao
-        and "rows" in evento_selecao["selection"]
-    ):
-        linhas_selecionadas = evento_selecao["selection"]["rows"]
-        if len(linhas_selecionadas) > 0:
-            indice_linha = linhas_selecionadas[0]
-            # Pega o ID real do Pokémon usando a posição clicada no DataFrame filtrado
-            id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
-            st.session_state.id_pokemon_selecionado = id_pokemon
-            st.rerun()
