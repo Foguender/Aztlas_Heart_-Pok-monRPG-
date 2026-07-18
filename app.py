@@ -130,7 +130,6 @@ if "id" in parametros_url:
                 st.markdown(f"- **Oculta (Habilidade E):** {poke[9]}")
 
 # MODO 2: EXIBIR A LISTA PRINCIPAL COM LINKS NOS NOMES
-# MODO 2: EXIBIR A LISTA PRINCIPAL COM LINKS NOS NOMES
 else:
     st.title("PokéDex Completa")
     st.write(
@@ -140,9 +139,9 @@ else:
     # Criamos uma cópia para não alterar os dados originais
     df_exibicao = df_filtrado.copy()
 
-    # Em vez de criar uma nova coluna, transformamos a própria coluna "Nome" na URL.
-    # Mas guardamos o texto original em uma coluna oculta para o Streamlit usar como rótulo!
+    # Guardamos o nome real na coluna auxiliar
     df_exibicao["Nome_Texto"] = df_exibicao["Nome"]
+    # A coluna "Nome" passa a guardar o link de destino
     df_exibicao["Nome"] = df_exibicao["ID"].apply(lambda x: f"/?id={x}")
 
     # Exibe a tabela configurada corretamente
@@ -160,12 +159,10 @@ else:
         column_config={
             "Nome": st.column_config.LinkColumn(
                 "Nome",
-                display_text="^.*$",  # Regex para capturar o texto do link
-                # O segredo está aqui: dizemos para o Streamlit usar o texto da coluna oculta
-                text_col="Nome_Texto",
+                text_col="Nome_Texto",  # Puxa o texto legível desta coluna
                 help="Clique para ver os detalhes",
             ),
-            "Nome_Texto": None,  # Esconde a coluna auxiliar de texto puro
+            "Nome_Texto": None,  # Esconde a coluna auxiliar para não duplicar na tela
         },
         disabled=True,  # Impede edições acidentais na tabela
     )
