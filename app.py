@@ -1,102 +1,174 @@
+import os
 import sqlite3
 import pandas as pd
 import streamlit as st
 
-# Configuração da página
-st.set_page_config(page_title="Pokédex Poke5e", layout="wide")
+# Configuração da página estilo PokéDex
+st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
 
-# --- FUNÇÕES DE AJUDA ---
+# --- CONEXÃO COM O BANCO DE DADOS ---
 def conectar_banco():
-    return sqlite3.connect("pokedex.db")
+    caminho_atual = os.path.dirname(__file__)
+    caminho_banco = os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
+    return sqlite3.connect(caminho_banco)
 
 
-def calcular_modificador(valor):
-    """Calcula o modificador de D&D 5e padrão (ex: 15 -> +2, 6 -> -2)"""
-    if valor is None:
-        return "0"
-    mod = (valor - 10) // 2
-    return f"+{mod}" if mod >= 0 else f"{mod}"
+# --- BUSCA DE DADOS ---
+def carregar_dados_pokemon():
+    conn = conectar_banco()
+    query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
 
 
-# --- INICIALIZAÇÃO DO ESTADO ---
-if "id_pokemon_selecionado" not in st.session_state:
-    st.session_state.id_pokemon_selecionado = 1  # Começa no ID 1 por padrão
+def buscar_detalhes_completos(pokemon_id):
+    conn = conectar_banco()
+    cursor = conn.cursor()
 
-# --- SIDERBAR / NAVEGAÇÃO ---
-st.sidebar.title("🔍 Navegação Pokédex")
+    # 1. Dados Gerais
+    cursor.execute('SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
+    gerais = cursor.fetchone()
 
-conn = conectar_banco()
-
-# Busca a lista de Pokémon para a navegação lateral
-df_sidebar = pd.read_sql_query("SELECT id, name FROM pokemon", conn)
-lista_pokemon = [f"{row['id']} - {row['name']}" for _, row in df_sidebar.iterrows()]
-
-pokemon_escolhido = st.sidebar.selectbox("Selecione um Pokémon:", lista_pokemon)
-id_atual = int(pokemon_escolhido.split(" - ")[0])
-st.session_state.id_pokemon_selecionado = id_atual
-
-# --- BUSCA DE DADOS DO POKÉMON SELECIONADO ---
-cursor = conn.cursor()
-
-# 1. Dados Gerais
-cursor.execute("SELECT * FROM pokemon WHERE id = ?", (id_atual,))
-poke_geral = cursor.fetchone()
-
-# 2. Base Stats Originais
-cursor.execute("SELECT * FROM base_stats WHERE pokemon_id = ?", (id_atual,))
-poke_stats = cursor.fetchone()
-
-# 3. Atributos do RPG (Tabela Nova)
-# Se você ainda não criou a tabela, esse bloco retornará None temporariamente
-try:
+    # 2. Descrição RPG
     cursor.execute(
-        "SELECT str, dex, con, intel, wis, cha, ac, hp_rpg FROM rpg_attributes WHERE pokemon_id = ?",
-        (id_atual,),
+        'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
+        (pokemon_id,),
     )
-    rpg_stats = cursor.fetchone()
-except sqlite3.OperationalError:
-    rpg_stats = None
+    descricao = cursor.fetchone()
 
-conn.close()
+    # 3. Base Stats
+    cursor.execute('SELECT * FROM "Base Stats" WHERE "ID" = ?', (pokemon_id,))
+    stats = cursor.fetchone()
 
-# --- INTERFACE PRINCIPAL ---
-if poke_geral:
-    st.title(f"🦖 {poke_geral[2]} (Nº {poke_geral[0]})")
+    # 4. Breeding & Training
+    cursor.execute(
+        'SELECT * FROM "Training_Breeding" WHERE "ID" = ?', (pokemon_id,)
+    )
+    breeding = cursor.fetchone()
 
-    # Criando as 4 abras solicitadas
-    aba1, aba2, aba3, aba4 = st.tabs(
-        [
-            "📋 Dados Gerais",
-            "🎲 Status & Atributos RPG",
-            "🥚 Criação & Treino",
-            "⚔️ Movimentos",
-        ]
+    # 5. Golpes / Moves (Buscando golpes associados ao ID do Pokémon)
+    # Nota: Ajuste os nomes das colunas conforme o seu esquema de golpes se necessário
+    try:
+        query_moves = 'SELECT "Nível", "Ataque", "Tipo", "Classe", "Poder", "Acurácia" FROM "pokemon_moves" WHERE "pokemon_id" = ? ORDER BY "Nível" ASC'
+        moves_df = pd.read_sql_query(query_moves, conn, params=(pokemon_id,))
+    except Exception:
+        moves_df = (
+            pd.DataFrame()
+        )  # Cria um DataFrame vazio caso a tabela ainda não esteja pronta
+
+    conn.close()
+    return gerais, descricao, stats, breeding, moves_df
+
+
+# --- INICIALIZAÇÃO DO ESTADO DE SESSÃO ---
+if "id_pokemon_selecionado" not in st.session_state:
+    st.session_state.id_pokemon_selecionado = None
+
+df_pokemon = carregar_dados_pokemon()
+
+# --- BARRA LATERAL (FILTROS) ---
+st.sidebar.header("🔍 Filtros da Pokédex")
+
+filtro_nome = st.sidebar.text_input("Buscar por Nome:", "")
+
+tipos_disponiveis = sorted(
+    list(
+        set(df_pokemon["Tipo 1"].dropna()) | set(df_pokemon["Tipo 2"].dropna())
+    )
+)
+filtro_tipo = st.sidebar.selectbox(
+    "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
+)
+
+coluna_ordenar = st.sidebar.selectbox(
+    "Ordenar por:", options=df_pokemon.columns.tolist(), index=2
+)
+ordem_crescente = st.sidebar.radio("Ordem:", ["Crescente", "Decrescente"])
+ascendente = True if ordem_crescente == "Crescente" else False
+
+# --- APLICAÇÃO DOS FILTROS ---
+df_filtrado = df_pokemon.copy()
+
+if filtro_nome:
+    df_filtrado = df_filtrado[
+        df_filtrado["Nome"].str.contains(filtro_nome, case=False, na=False)
+    ]
+
+if filtro_tipo != "Todos":
+    df_filtrado = df_filtrado[
+        (df_filtrado["Tipo 1"] == filtro_tipo)
+        | (df_filtrado["Tipo 2"] == filtro_tipo)
+    ]
+
+df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
+
+
+# --- CORPO PRINCIPAL DO SITE ---
+
+# MODO 1: EXIBIR A FICHA DETALHADA COM ABAS
+if st.session_state.id_pokemon_selecionado is not None:
+    if st.button("⬅ Voltar para a Lista"):
+        st.session_state.id_pokemon_selecionado = None
+        st.rerun()
+
+    # Busca todas as informações associadas ao ID nas diferentes tabelas
+    poke_geral, poke_desc, poke_stats, poke_breed = buscar_detalhes_completos(
+        int(st.session_state.id_pokemon_selecionado)
     )
 
-    # --- ABA 1: DADOS GERAIS ---
-    with aba1:
-        st.subheader("Informações Biológicas")
-        # Exiba aqui seus dados de tipo, descrição, etc.
-        st.write(f"Espécie: {poke_geral[2]}")
+    if poke_geral:
+        st.title(
+            f"{poke_geral[2]} {poke_geral[1] if poke_geral[1] else ''}"
+        )  # Nome + número da Pokédex
 
-    # --- ABA 2: BASE STATS & ATRIBUTOS D&D (DIRETO DO BANCO) ---
-    with aba2:
-        col_stats_brutos, col_stats_rpg = st.columns([1, 2])
+        # Criando a estrutura de abas baseada nos post-its do Dev
+        aba1, aba2, aba3 = st.tabs(
+            [
+                "📋 Dados Gerais",
+                "📊 Base Stats",
+                "🥚 Breeding & Training",
+            ]
+        )
 
-        with col_stats_brutos:
-            st.subheader("📊 Atributos Originais (Jogo)")
-            if poke_stats:
-                hp, atk, de, spatk, spdef, spe = (
-                    poke_stats[2],
-                    poke_stats[3],
-                    poke_stats[4],
-                    poke_stats[5],
-                    poke_stats[6],
-                    poke_stats[7],
+        # ABA 1: DADOS GERAIS
+        with aba1:
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(
+                    "https://via.placeholder.com/250",
+                    caption=poke_geral[2],
+                    use_container_width=True,
                 )
-                bst = sum([hp, atk, de, spatk, spdef, spe])
+            with col2:
+                st.subheader("Informações Biológicas")
+                if poke_desc:
+                    st.markdown(f"**Espécie:** {poke_desc[0]}")
+                    st.markdown(f"*\"{poke_desc[1]}\"*")
 
+                st.write("---")
+                st.markdown(
+                    f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
+                )
+                st.markdown(
+                    f"**Altura:** {poke_geral[5]} m | **Peso:** {poke_geral[6]} kg"
+                )
+
+                st.subheader("Habilidades")
+                st.markdown(f"- **Principal:** {poke_geral[7]}")
+                if poke_geral[8]:
+                    st.markdown(f"- **Secundária:** {poke_geral[8]}")
+                if poke_geral[9]:
+                    st.markdown(
+                        f"- **Oculta (Habilidade E):** {poke_geral[9]}"
+                    )
+
+        # ABA 2: BASE STATS
+        with aba2:
+            st.subheader("Estatísticas Base")
+            if poke_stats:
+                # Mapeamento baseado nas colunas da tabela 'Base Stats' (HP, Atk, Def, Sp. Atk, Sp. Def, Spe)
                 stats_dados = {
                     "Status": [
                         "HP",
@@ -105,104 +177,62 @@ if poke_geral:
                         "Sp. Atk",
                         "Sp. Def",
                         "Velocidade",
-                        "Total (BST)",
                     ],
-                    "Valor": [hp, atk, de, spatk, spdef, spe, bst],
+                    "Valor": [
+                        poke_stats[2],
+                        poke_stats[3],
+                        poke_stats[4],
+                        poke_stats[5],
+                        poke_stats[6],
+                        poke_stats[7],
+                    ],
                 }
-                st.dataframe(
-                    pd.DataFrame(stats_dados),
-                    hide_index=True,
-                    use_container_width=True,
-                )
-
-        with col_stats_rpg:
-            st.subheader("🛡️ Ficha Técnica Poke5e (D&D)")
-
-            if rpg_stats:
-                # Se encontrou os dados salvos na tabela do banco de dados
-                str_score, dex_score, con_score = (
-                    rpg_stats[0],
-                    rpg_stats[1],
-                    rpg_stats[2],
-                )
-                int_score, wis_score, cha_score = (
-                    rpg_stats[3],
-                    rpg_stats[4],
-                    rpg_stats[5],
-                )
-                ac_total = rpg_stats[6]
-                hp_rpg = rpg_stats[7]
+                df_stats = pd.DataFrame(stats_dados)
+                st.dataframe(df_stats, hide_index=True, use_container_width=True)
             else:
-                # Valores provisórios caso a tabela no banco ainda esteja vazia
-                st.warning(
-                    "⚠️ Atributos de RPG não encontrados no banco de dados para este Pokémon."
-                )
-                str_score, dex_score, con_score = 10, 10, 10
-                int_score, wis_score, cha_score = 10, 10, 10
-                ac_total = 10
-                hp_rpg = 10
+                st.info("Dados de Base Stats não encontrados para este Pokémon.")
 
-            # Exibição dos cards de combate superiores
-            c_hp, c_ac = st.columns(2)
-            with c_hp:
-                st.metric(label="❤️ Pontos de Vida (HP)", value=hp_rpg)
-            with c_ac:
-                st.metric(label="🛡️ Classe de Armadura (AC)", value=ac_total)
-
-            st.write("")
-
-            # Grid com as 6 habilidades de D&D 5e
-            c1, c2, c3, c4, c5, c6 = st.columns(6)
-            with c1:
-                st.metric(
-                    label="STR",
-                    value=str_score,
-                    delta=calcular_modificador(str_score),
-                    delta_color="off",
+        # ABA 3: BREEDING & TRAINING
+        with aba3:
+            st.subheader("Dados de Cruzamento e Treinamento")
+            if poke_breed:
+                # Exibe as informações da tabela Training_Breeding
+                st.markdown(f"**Rendimento de EV:** {poke_breed[2]}")
+                st.markdown(f"**Amizade Base:** {poke_breed[3]}")
+                st.markdown(
+                    f"**Grupo de Ovos 1:** {poke_breed[4]} | **Grupo de Ovos 2:** {poke_breed[5] if poke_breed[5] else 'Nenhum'}"
                 )
-            with c2:
-                st.metric(
-                    label="DEX",
-                    value=dex_score,
-                    delta=calcular_modificador(dex_score),
-                    delta_color="off",
-                )
-            with c3:
-                st.metric(
-                    label="CON",
-                    value=con_score,
-                    delta=calcular_modificador(con_score),
-                    delta_color="off",
-                )
-            with c4:
-                st.metric(
-                    label="INT",
-                    value=int_score,
-                    delta=calcular_modificador(int_score),
-                    delta_color="off",
-                )
-            with c5:
-                st.metric(
-                    label="WIS",
-                    value=wis_score,
-                    delta=calcular_modificador(wis_score),
-                    delta_color="off",
-                )
-            with c6:
-                st.metric(
-                    label="CHA",
-                    value=cha_score,
-                    delta=calcular_modificador(cha_score),
-                    delta_color="off",
+                st.markdown(f"**Taxa de Gênero:** {poke_breed[6]}")
+            else:
+                st.info(
+                    "Dados de Breeding/Training não encontrados para este Pokémon."
                 )
 
-    # --- ABA 3: CRIAÇÃO & TREINO ---
-    with aba3:
-        st.subheader("Dados de Cruzamento e Treinamento")
-
-    # --- ABA 4: MOVIMENTOS ---
-    with aba4:
-        st.subheader("Lista de Ataques Disponíveis")
-
+# MODO 2: EXIBIR A TABELA PRINCIPAL (ESTILO POKÉMON DB)
 else:
-    st.error("Pokémon não encontrado.")
+    st.title("PokéDex Completa")
+    st.write(
+        "Selecione a caixinha ao lado esquerdo de qualquer Pokémon para abrir sua ficha detalhada."
+    )
+
+    df_tabela = df_filtrado.fillna("-")
+
+    evento_selecao = st.dataframe(
+        df_tabela,
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
+    )
+
+    if (
+        evento_selecao
+        and "selection" in evento_selecao
+        and "rows" in evento_selecao["selection"]
+    ):
+        linhas_selecionadas = evento_selecao["selection"]["rows"]
+        if len(linhas_selecionadas) > 0:
+            indice_linha = linhas_selecionadas[0]
+            id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
+            st.session_state.id_pokemon_selecionado = id_pokemon
+            st.rerun()
