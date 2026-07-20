@@ -6,6 +6,27 @@ import streamlit as st
 # Configuração da página estilo PokéDex
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
+# --- CONTROLADORA DE ACESSO (SENHA DO MESTRE) ---
+if "modo_mestre" not in st.session_state:
+    st.session_state.modo_mestre = False
+
+st.sidebar.title("🔮 Aztlas-Heart")
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔐 Painel de Acesso")
+
+# Campo de senha mascarado na barra lateral
+senha = st.sidebar.text_input("Senha do Mestre:", type="password")
+
+if senha == "aztlas2026":  # Altere sua senha aqui se desejar
+    st.session_state.modo_mestre = True
+    st.sidebar.success("⚔️ Modo Mestre Ativo!")
+else:
+    st.session_state.modo_mestre = False
+    if senha != "":
+        st.sidebar.error("Senha incorreta.")
+
+st.sidebar.markdown("---")
+
 
 # --- CONEXÃO COM O BANCO DE DADOS ---
 def conectar_banco():
@@ -110,7 +131,7 @@ if st.session_state.id_pokemon_selecionado is not None:
         st.session_state.id_pokemon_selecionado = None
         st.rerun()
 
-    # CORREÇÃO AQUI: Recebe os 5 valores retornados pela função
+    # Recebe os 5 valores retornados pela função
     poke_geral, poke_desc, poke_stats, poke_breed, poke_moves = buscar_detalhes_completos(
         int(st.session_state.id_pokemon_selecionado)
     )
