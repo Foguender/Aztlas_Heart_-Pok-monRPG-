@@ -17,7 +17,7 @@ st.sidebar.subheader("🔐 Painel de Acesso")
 # Campo de senha mascarado na barra lateral
 senha = st.sidebar.text_input("Senha do Mestre:", type="password")
 
-if senha == "aztlas2026":  # Altere sua senha aqui se desejar
+if senha == "Dusk_0256":  # Altere sua senha aqui se desejar
     st.session_state.modo_mestre = True
     st.sidebar.success("⚔️ Modo Mestre Ativo!")
 else:
