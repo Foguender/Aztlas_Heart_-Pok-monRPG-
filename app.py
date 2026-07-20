@@ -249,7 +249,7 @@ with abas[0]:
 
 
 # ==============================================================================
-# ABA 2: COMPÊNDIO DE ITENS (COM DADOS DINÂMICOS DO MERCADO)
+# ABA 2: COMPÊNDIO DE ITENS (COM VISÃO DIFERENCIADA JOGADOR / MESTRE)
 # ==============================================================================
 with abas[1]:
     st.title("🎒 Compêndio de Itens & Equipamentos")
@@ -277,24 +277,28 @@ with abas[1]:
         if filtro_item_tipo != "Todos":
             df_itens_filtrados = df_itens_filtrados[df_itens_filtrados["Tipo"] == filtro_item_tipo]
 
-        # CALCULADORA DE PREÇO COM FLUTUAÇÃO AUTOMÁTICA
-        def calcular_preco_ajustado(row):
+        # CALCULADORA INTELIGENTE DE PREÇO
+        def processar_exibicao_preco(row):
             preco_original = row["Preço"]
             if pd.isnull(preco_original) or preco_original == 0:
-                return "Inestimável", "⚖️ Estável"
+                return "Inestimável", ""
 
+            # --- VISÃO DO JOGADOR (SEMPRE PREÇO BASE LIMPO) ---
+            if not st.session_state.modo_mestre:
+                return f"₽ {preco_original:,.2f}", ""
+
+            # --- VISÃO EXCLUSIVA DO MESTRE (COM FLUTUAÇÃO) ---
             tipo_item = row["Tipo"]
             mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
-
             preco_final = preco_original * mod
             pct = int(abs(mod - 1.0) * 100)
 
             if mod > 1.0:
-                status = f"📈 +{pct}% (Alta de Mercado)"
+                status = f"📈 +{pct}% (Alta)"
             elif mod < 1.0:
-                status = f"📉 -{pct}% (Oferta / Desconto)"
+                status = f"📉 -{pct}% (Desconto)"
             else:
-                status = "⚖️ Preço Estável"
+                status = "⚖️ Base"
 
             return f"₽ {preco_final:,.2f}", status
 
@@ -302,10 +306,10 @@ with abas[1]:
 
         if visualizacao == "📋 Fichas Detalhadas":
             for _, item in df_itens_filtrados.iterrows():
-                preco_txt, status_preco = calcular_preco_ajustado(item)
+                preco_txt, status_preco = processar_exibicao_preco(item)
 
-                # Define o título do card se a opção de exibir tendência estiver ligada
-                if st.session_state.exibir_tendencia_jogadores:
+                # Formatação do Título do Expander
+                if st.session_state.modo_mestre and status_preco:
                     titulo_expander = f"📦 **{item['Nome']}** — *{item['Tipo']}* | 💰 **{preco_txt}** ({status_preco})"
                 else:
                     titulo_expander = f"📦 **{item['Nome']}** — *{item['Tipo']}* | 💰 **{preco_txt}**"
@@ -315,10 +319,11 @@ with abas[1]:
 
                     with col_e1:
                         st.markdown(f"**Categoria:** `{item['Tipo']}`")
-                        st.markdown(f"**Preço de Compra:** {preco_txt}")
+                        st.markdown(f"**Preço:** {preco_txt}")
                         
-                        if st.session_state.exibir_tendencia_jogadores or st.session_state.modo_mestre:
-                            st.markdown(f"**Situação do Mercado:** {status_preco}")
+                        # Informação visível apenas no painel do Mestre
+                        if st.session_state.modo_mestre and status_preco:
+                            st.caption(f"Status da Flutuação: {status_preco}")
 
                         if pd.notnull(item["Efeito"]) and str(item["Efeito"]).strip() != "":
                             st.info(f"⚡ **Efeito:** {item['Efeito']}")
@@ -329,14 +334,14 @@ with abas[1]:
         else:
             df_exibicao = df_itens_filtrados.copy()
 
-            df_exibicao["Preço Atual"] = df_exibicao.apply(lambda r: calcular_preco_ajustado(r)[0], axis=1)
+            df_exibicao["Preço"] = df_exibicao.apply(lambda r: processar_exibicao_preco(r)[0], axis=1)
             
-            if st.session_state.exibir_tendencia_jogadores or st.session_state.modo_mestre:
-                df_exibicao["Tendência"] = df_exibicao.apply(lambda r: calcular_preco_ajustado(r)[1], axis=1)
+            # Adiciona a coluna de tendência apenas para o Mestre
+            if st.session_state.modo_mestre:
+                df_exibicao["Status Mercado (Mestre)"] = df_exibicao.apply(lambda r: processar_exibicao_preco(r)[1], axis=1)
 
             df_exibicao = df_exibicao.fillna("-")
             st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
-
 
 # ==============================================================================
 # ABA 3: ESCUDO DO MESTRE (CONTROLE TOTAL)
