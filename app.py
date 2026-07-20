@@ -25,7 +25,7 @@ st.sidebar.subheader("🔐 Painel de Acesso")
 
 senha = st.sidebar.text_input("Senha do Mestre:", type="password")
 
-if senha == "aztlas2026":
+if senha == "Dusk_0256":
     st.session_state.modo_mestre = True
     st.sidebar.success("⚔️ Modo Mestre Ativo!")
 else:
