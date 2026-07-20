@@ -3,21 +3,29 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-# Configuração da página estilo PokéDex
+# Configuração da página
 st.set_page_config(page_title="PokéDex & Itens Aztlas", page_icon="🐾", layout="wide")
 
-# --- CONTROLADORA DE ACESSO (SENHA DO MESTRE) ---
+# -----------------------------------------------------------------------------
+# 1. ESTADOS DE SESSÃO & MODIFICADORES DE PREÇO (MODO MESTRE)
+# -----------------------------------------------------------------------------
 if "modo_mestre" not in st.session_state:
     st.session_state.modo_mestre = False
 
+if "modificadores_preco" not in st.session_state:
+    # Dicionário inicial com multiplicador 1.0 (Preço Base)
+    st.session_state.modificadores_preco = {}
+
+# -----------------------------------------------------------------------------
+# 2. PAINEL DE ACESSO (BARRA LATERAL)
+# -----------------------------------------------------------------------------
 st.sidebar.title("🔮 Aztlas-Heart")
 st.sidebar.markdown("---")
 st.sidebar.subheader("🔐 Painel de Acesso")
 
-# Campo de senha mascarado na barra lateral
 senha = st.sidebar.text_input("Senha do Mestre:", type="password")
 
-if senha == "Dusk_0256":  # Altere sua senha aqui se desejar
+if senha == "aztlas2026":
     st.session_state.modo_mestre = True
     st.sidebar.success("⚔️ Modo Mestre Ativo!")
 else:
@@ -28,14 +36,15 @@ else:
 st.sidebar.markdown("---")
 
 
-# --- CONEXÃO COM O BANCO DE DADOS ---
+# -----------------------------------------------------------------------------
+# 3. BANCO DE DADOS & QUERIES
+# -----------------------------------------------------------------------------
 def conectar_banco():
     caminho_atual = os.path.dirname(__file__)
     caminho_banco = os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
     return sqlite3.connect(caminho_banco)
 
 
-# --- BUSCA DE DADOS (POKÉMON) ---
 def carregar_dados_pokemon():
     conn = conectar_banco()
     query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
@@ -48,28 +57,21 @@ def buscar_detalhes_completos(pokemon_id):
     conn = conectar_banco()
     cursor = conn.cursor()
 
-    # 1. Dados Gerais
     cursor.execute('SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
     gerais = cursor.fetchone()
 
-    # 2. Descrição RPG
     cursor.execute(
         'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
         (pokemon_id,),
     )
     descricao = cursor.fetchone()
 
-    # 3. Base Stats
     cursor.execute('SELECT * FROM "Base Stats" WHERE "ID" = ?', (pokemon_id,))
     stats = cursor.fetchone()
 
-    # 4. Breeding & Training
-    cursor.execute(
-        'SELECT * FROM "Training_Breeding" WHERE "ID" = ?', (pokemon_id,)
-    )
+    cursor.execute('SELECT * FROM "Training_Breeding" WHERE "ID" = ?', (pokemon_id,))
     breeding = cursor.fetchone()
 
-    # 5. Golpes / Moves
     try:
         query_moves = 'SELECT "Nível", "Ataque", "Tipo", "Classe", "Poder", "Acurácia" FROM "pokemon_moves" WHERE "pokemon_id" = ? ORDER BY "Nível" ASC'
         moves_df = pd.read_sql_query(query_moves, conn, params=(pokemon_id,))
@@ -80,7 +82,6 @@ def buscar_detalhes_completos(pokemon_id):
     return gerais, descricao, stats, breeding, moves_df
 
 
-# --- BUSCA DE DADOS (ITENS) ---
 def carregar_dados_itens():
     conn = conectar_banco()
     try:
@@ -92,33 +93,33 @@ def carregar_dados_itens():
     return df_itens
 
 
-# --- INICIALIZAÇÃO DO ESTADO DE SESSÃO ---
 if "id_pokemon_selecionado" not in st.session_state:
     st.session_state.id_pokemon_selecionado = None
 
-# Organização por Abas Globais na aplicação
-aba_pokedex, aba_itens = st.tabs(["🐾 Pokédex Regional", "🎒 Compêndio de Itens"])
+
+# -----------------------------------------------------------------------------
+# 4. ESTRUTURA DE ABAS
+# -----------------------------------------------------------------------------
+abas_disponiveis = ["🐾 Pokédex Regional", "🎒 Compêndio de Itens"]
+if st.session_state.modo_mestre:
+    abas_disponiveis.append("🧙‍♂️ Escudo do Mestre")
+
+abas = st.tabs(abas_disponiveis)
 
 
 # ==============================================================================
 # ABA 1: POKÉDEX REGIONAL
 # ==============================================================================
-with aba_pokedex:
+with abas[0]:
     df_pokemon = carregar_dados_pokemon()
 
-    # --- BARRA LATERAL (FILTROS POKÉMON) ---
     st.sidebar.header("🔍 Filtros da Pokédex")
-
     filtro_nome = st.sidebar.text_input("Buscar Pokémon por Nome:", "")
 
     tipos_disponiveis = sorted(
-        list(
-            set(df_pokemon["Tipo 1"].dropna()) | set(df_pokemon["Tipo 2"].dropna())
-        )
+        list(set(df_pokemon["Tipo 1"].dropna()) | set(df_pokemon["Tipo 2"].dropna()))
     )
-    filtro_tipo = st.sidebar.selectbox(
-        "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
-    )
+    filtro_tipo = st.sidebar.selectbox("Filtrar por Tipo:", ["Todos"] + tipos_disponiveis)
 
     coluna_ordenar = st.sidebar.selectbox(
         "Ordenar Pokémon por:", options=df_pokemon.columns.tolist(), index=2
@@ -126,7 +127,6 @@ with aba_pokedex:
     ordem_crescente = st.sidebar.radio("Ordem Pokémon:", ["Crescente", "Decrescente"])
     ascendente = True if ordem_crescente == "Crescente" else False
 
-    # --- APLICAÇÃO DOS FILTROS ---
     df_filtrado = df_pokemon.copy()
 
     if filtro_nome:
@@ -136,13 +136,11 @@ with aba_pokedex:
 
     if filtro_tipo != "Todos":
         df_filtrado = df_filtrado[
-            (df_filtrado["Tipo 1"] == filtro_tipo)
-            | (df_filtrado["Tipo 2"] == filtro_tipo)
+            (df_filtrado["Tipo 1"] == filtro_tipo) | (df_filtrado["Tipo 2"] == filtro_tipo)
         ]
 
     df_filtrado = df_filtrado.sort_values(by=coluna_ordenar, ascending=ascendente)
 
-    # --- CORPO POKÉDEX ---
     if st.session_state.id_pokemon_selecionado is not None:
         if st.button("⬅ Voltar para a Lista"):
             st.session_state.id_pokemon_selecionado = None
@@ -167,11 +165,7 @@ with aba_pokedex:
             with aba1:
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    st.image(
-                        "https://via.placeholder.com/250",
-                        caption=poke_geral[2],
-                        use_container_width=True,
-                    )
+                    st.image("https://via.placeholder.com/250", caption=poke_geral[2], use_container_width=True)
                 with col2:
                     st.subheader("Informações Biológicas")
                     if poke_desc:
@@ -179,12 +173,8 @@ with aba_pokedex:
                         st.markdown(f"*\"{poke_desc[1]}\"*")
 
                     st.write("---")
-                    st.markdown(
-                        f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
-                    )
-                    st.markdown(
-                        f"**Altura:** {poke_geral[5]} m | **Peso:** {poke_geral[6]} kg"
-                    )
+                    st.markdown(f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}")
+                    st.markdown(f"**Altura:** {poke_geral[5]} m | **Peso:** {poke_geral[6]} kg")
 
                     st.subheader("Habilidades")
                     st.markdown(f"- **Principal:** {poke_geral[7]}")
@@ -200,8 +190,7 @@ with aba_pokedex:
                         "Status": ["HP", "Ataque", "Defesa", "Sp. Atk", "Sp. Def", "Velocidade"],
                         "Valor": [poke_stats[2], poke_stats[3], poke_stats[4], poke_stats[5], poke_stats[6], poke_stats[7]],
                     }
-                    df_stats = pd.DataFrame(stats_dados)
-                    st.dataframe(df_stats, hide_index=True, use_container_width=True)
+                    st.dataframe(pd.DataFrame(stats_dados), hide_index=True, use_container_width=True)
                 else:
                     st.info("Dados de Base Stats não encontrados para este Pokémon.")
 
@@ -210,9 +199,7 @@ with aba_pokedex:
                 if poke_breed:
                     st.markdown(f"**Rendimento de EV:** {poke_breed[2]}")
                     st.markdown(f"**Amizade Base:** {poke_breed[3]}")
-                    st.markdown(
-                        f"**Grupo de Ovos 1:** {poke_breed[4]} | **Grupo de Ovos 2:** {poke_breed[5] if poke_breed[5] else 'Nenhum'}"
-                    )
+                    st.markdown(f"**Grupo de Ovos 1:** {poke_breed[4]} | **Grupo de Ovos 2:** {poke_breed[5] if poke_breed[5] else 'Nenhum'}")
                     st.markdown(f"**Taxa de Gênero:** {poke_breed[6]}")
                 else:
                     st.info("Dados de Breeding/Training não encontrados para este Pokémon.")
@@ -229,50 +216,37 @@ with aba_pokedex:
         st.write("Selecione a caixinha ao lado esquerdo de qualquer Pokémon para abrir sua ficha detalhada.")
 
         df_tabela = df_filtrado.fillna("-")
-
         evento_selecao = st.dataframe(
-            df_tabela,
-            use_container_width=True,
-            hide_index=True,
-            on_select="rerun",
-            selection_mode="single-row",
+            df_tabela, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row"
         )
 
-        if (
-            evento_selecao
-            and "selection" in evento_selecao
-            and "rows" in evento_selecao["selection"]
-        ):
+        if evento_selecao and "selection" in evento_selecao and "rows" in evento_selecao["selection"]:
             linhas_selecionadas = evento_selecao["selection"]["rows"]
             if len(linhas_selecionadas) > 0:
                 indice_linha = linhas_selecionadas[0]
-                id_pokemon = df_filtrado.iloc[indice_linha]["ID"]
-                st.session_state.id_pokemon_selecionado = id_pokemon
+                st.session_state.id_pokemon_selecionado = df_filtrado.iloc[indice_linha]["ID"]
                 st.rerun()
 
 
 # ==============================================================================
-# ABA 2: COMPÊNDIO DE ITENS (POKÉ5E STYLE)
+# ABA 2: COMPÊNDIO DE ITENS (COM SISTEMA DE PREÇO FLUTUANTE)
 # ==============================================================================
-with aba_itens:
+with abas[1]:
     st.title("🎒 Compêndio de Itens & Equipamentos")
-    st.markdown("Consulte os consumíveis, esferas de captura, bagas e itens segurados da região de Aztlas.")
+    st.markdown("Consulte os consumíveis, esferas de captura, bagas e itens da região de Aztlas.")
 
     df_itens = carregar_dados_itens()
 
     if df_itens.empty:
         st.warning("Nenhum item encontrado na tabela 'Itens' da base de dados.")
     else:
-        # Filtros específicos para Itens na barra lateral
         st.sidebar.markdown("---")
         st.sidebar.header("🎒 Filtros do Inventário")
-        
+
         filtro_item_nome = st.sidebar.text_input("Buscar Item por Nome:", "")
-        
         tipos_itens = ["Todos"] + sorted(list(df_itens["Tipo"].dropna().unique()))
         filtro_item_tipo = st.sidebar.selectbox("Filtrar por Categoria/Tipo:", tipos_itens)
 
-        # Aplicação dos filtros de itens
         df_itens_filtrados = df_itens.copy()
 
         if filtro_item_nome:
@@ -281,32 +255,105 @@ with aba_itens:
             ]
 
         if filtro_item_tipo != "Todos":
-            df_itens_filtrados = df_itens_filtrados[
-                df_itens_filtrados["Tipo"] == filtro_item_tipo
-            ]
+            df_itens_filtrados = df_itens_filtrados[df_itens_filtrados["Tipo"] == filtro_item_tipo]
 
-        # Exibição estilo Cards / Poké5e
-        st.markdown(f"**Total de Itens Encontrados:** `{len(df_itens_filtrados)}`")
-        
-        # Modo de visualização: Tabela Completa ou Fichas Expandíveis
+        # CALCULADORA DE PREÇO FLUTUANTE (Dinamizada pelo Modo Mestre)
+        def calcular_preco_ajustado(row):
+            preco_original = row["Preço"]
+            if pd.isnull(preco_original) or preco_original == 0:
+                return "Inestimável", "⚖️ Normal"
+
+            tipo_item = row["Tipo"]
+            # Puxa o modificador definido pelo Mestre (ou 1.0 se não alterado)
+            mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
+            
+            # Aplica modificador apenas no MESTRE
+            if st.session_state.modo_mestre and mod != 1.0:
+                preco_final = preco_original * mod
+                if mod > 1.0:
+                    status = f"📈 +{int((mod-1)*100)}% (Inflação)"
+                else:
+                    status = f"📉 -{int((1-mod)*100)}% (Desvalorizado)"
+                return f"₽ {preco_final:,.2f} (Base: ₽ {preco_original:,.2f})", status
+            
+            return f"₽ {preco_original:,.2f}", "⚖️ Normal"
+
         visualizacao = st.radio("Modo de Visualização:", ["📋 Fichas Detalhadas", "📊 Tabela Geral"], horizontal=True)
 
         if visualizacao == "📋 Fichas Detalhadas":
             for _, item in df_itens_filtrados.iterrows():
-                preco_fmt = f"₽ {item['Preço']:,.2f}" if pd.notnull(item['Preço']) else "Inestimável / Especial"
-                
-                with st.expander(f"📦 **{item['Nome']}** — *{item['Tipo']}* | 💰 {preco_fmt}"):
+                preco_txt, status_preco = calcular_preco_ajustado(item)
+
+                with st.expander(f"📦 **{item['Nome']}** — *{item['Tipo']}* | 💰 {preco_txt}"):
                     col_e1, col_e2 = st.columns([1, 2])
-                    
+
                     with col_e1:
                         st.markdown(f"**Categoria:** `{item['Tipo']}`")
-                        st.markdown(f"**Preço Médio:** {preco_fmt}")
-                        if pd.notnull(item['Efeito']) and str(item['Efeito']).strip() != "":
+                        st.markdown(f"**Preço Atual:** {preco_txt}")
+                        if st.session_state.modo_mestre:
+                            st.caption(f"Status do Mercado: {status_preco}")
+                        
+                        if pd.notnull(item["Efeito"]) and str(item["Efeito"]).strip() != "":
                             st.info(f"⚡ **Efeito:** {item['Efeito']}")
-                    
+
                     with col_e2:
                         st.markdown("**Descrição Rápida / Lore:**")
-                        st.write(item['Descrição'] if item['Descrição'] else "Sem descrição cadastrada.")
+                        st.write(item["Descrição"] if item["Descrição"] else "Sem descrição cadastrada.")
         else:
-            df_exibicao = df_itens_filtrados.fillna("-")
+            df_exibicao = df_itens_filtrados.copy()
+            
+            # Atualiza coluna de Preço com cálculo do mestre
+            df_exibicao["Preço Ajustado"] = df_exibicao.apply(lambda r: calcular_preco_ajustado(r)[0], axis=1)
+            if st.session_state.modo_mestre:
+                df_exibicao["Status do Mercado"] = df_exibicao.apply(lambda r: calcular_preco_ajustado(r)[1], axis=1)
+            
+            df_exibicao = df_exibicao.fillna("-")
             st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
+
+
+# ==============================================================================
+# ABA 3: ESCUDO DO MESTRE (PAINEL DE MERCADO & FLUTUAÇÃO DE PREÇOS)
+# ==============================================================================
+if st.session_state.modo_mestre:
+    with abas[2]:
+        st.title("🧙‍♂️ Escudo do Mestre")
+        st.markdown("Painel secreto de controle de regras e flutuação de economia.")
+
+        sub_mercado, sub_regras = st.tabs(["📈 Controladadora do Mercado", "📜 Regras Rápida"])
+
+        with sub_mercado:
+            st.subheader("💰 Ajuste de Flutuação da Economia Regional")
+            st.write("Ajuste os percentuais por categoria de item. O valor será atualizado em tempo real na aba de Itens.")
+
+            df_itens = carregar_dados_itens()
+            categorias = sorted(list(df_itens["Tipo"].dropna().unique())) if not df_itens.empty else []
+
+            col_esq, col_dir = st.columns(2)
+
+            for idx, cat in enumerate(categorias):
+                col_alvo = col_esq if idx % 2 == 0 else col_dir
+                with col_alvo:
+                    st.markdown(f"#### Categoria: **{cat}**")
+                    
+                    # Puxa o valor atual salvo no session state ou 100% (1.0)
+                    val_atual = int(st.session_state.modificadores_preco.get(cat, 1.0) * 100)
+                    
+                    novo_percentual = st.slider(
+                        f"Ajuste % para {cat}:",
+                        min_value=30,      # Desvalorização de até -70%
+                        max_value=300,     # Inflação de até +200%
+                        value=val_atual,
+                        step=5,
+                        format="%d%%",
+                        key=f"slider_{cat}"
+                    )
+                    
+                    # Atualiza o modificador no estado de sessão (ex: 80% = 0.8)
+                    st.session_state.modificadores_preco[cat] = novo_percentual / 100.0
+
+            if st.button("🔄 Resetar Todos os Preços para o Valor Base"):
+                st.session_state.modificadores_preco = {}
+                st.rerun()
+
+        with sub_regras:
+            st.info("Espaço reservado para outras anotações ou tabelas rápidas do Mestre.")
