@@ -48,15 +48,12 @@ def buscar_detalhes_completos(pokemon_id):
     )
     breeding = cursor.fetchone()
 
-    # 5. Golpes / Moves (Buscando golpes associados ao ID do Pokémon)
-    # Nota: Ajuste os nomes das colunas conforme o seu esquema de golpes se necessário
+    # 5. Golpes / Moves
     try:
         query_moves = 'SELECT "Nível", "Ataque", "Tipo", "Classe", "Poder", "Acurácia" FROM "pokemon_moves" WHERE "pokemon_id" = ? ORDER BY "Nível" ASC'
         moves_df = pd.read_sql_query(query_moves, conn, params=(pokemon_id,))
     except Exception:
-        moves_df = (
-            pd.DataFrame()
-        )  # Cria um DataFrame vazio caso a tabela ainda não esteja pronta
+        moves_df = pd.DataFrame()
 
     conn.close()
     return gerais, descricao, stats, breeding, moves_df
@@ -113,22 +110,23 @@ if st.session_state.id_pokemon_selecionado is not None:
         st.session_state.id_pokemon_selecionado = None
         st.rerun()
 
-    # Busca todas as informações associadas ao ID nas diferentes tabelas
-    poke_geral, poke_desc, poke_stats, poke_breed = buscar_detalhes_completos(
+    # CORREÇÃO AQUI: Recebe os 5 valores retornados pela função
+    poke_geral, poke_desc, poke_stats, poke_breed, poke_moves = buscar_detalhes_completos(
         int(st.session_state.id_pokemon_selecionado)
     )
 
     if poke_geral:
         st.title(
             f"{poke_geral[2]} {poke_geral[1] if poke_geral[1] else ''}"
-        )  # Nome + número da Pokédex
+        )
 
-        # Criando a estrutura de abas baseada nos post-its do Dev
-        aba1, aba2, aba3 = st.tabs(
+        # Adicionada a aba de Golpes
+        aba1, aba2, aba3, aba4 = st.tabs(
             [
                 "📋 Dados Gerais",
                 "📊 Base Stats",
                 "🥚 Breeding & Training",
+                "⚔️ Golpes / Moves",
             ]
         )
 
@@ -168,7 +166,6 @@ if st.session_state.id_pokemon_selecionado is not None:
         with aba2:
             st.subheader("Estatísticas Base")
             if poke_stats:
-                # Mapeamento baseado nas colunas da tabela 'Base Stats' (HP, Atk, Def, Sp. Atk, Sp. Def, Spe)
                 stats_dados = {
                     "Status": [
                         "HP",
@@ -196,7 +193,6 @@ if st.session_state.id_pokemon_selecionado is not None:
         with aba3:
             st.subheader("Dados de Cruzamento e Treinamento")
             if poke_breed:
-                # Exibe as informações da tabela Training_Breeding
                 st.markdown(f"**Rendimento de EV:** {poke_breed[2]}")
                 st.markdown(f"**Amizade Base:** {poke_breed[3]}")
                 st.markdown(
@@ -207,6 +203,14 @@ if st.session_state.id_pokemon_selecionado is not None:
                 st.info(
                     "Dados de Breeding/Training não encontrados para este Pokémon."
                 )
+
+        # ABA 4: GOLPES / MOVES
+        with aba4:
+            st.subheader("Lista de Golpes Aprendidos")
+            if not poke_moves.empty:
+                st.dataframe(poke_moves, hide_index=True, use_container_width=True)
+            else:
+                st.info("Nenhum golpe encontrado ou tabela de golpes não configurada.")
 
 # MODO 2: EXIBIR A TABELA PRINCIPAL (ESTILO POKÉMON DB)
 else:
