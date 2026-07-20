@@ -277,30 +277,38 @@ with abas[1]:
         if filtro_item_tipo != "Todos":
             df_itens_filtrados = df_itens_filtrados[df_itens_filtrados["Tipo"] == filtro_item_tipo]
 
-        # CALCULADORA INTELIGENTE DE PREÇO
         def processar_exibicao_preco(row):
-            preco_original = row["Preço"]
-            if pd.isnull(preco_original) or preco_original == 0:
-                return "Inestimável", ""
+    preco_raw = row["Preço"]
 
-            # --- VISÃO DO JOGADOR (SEMPRE PREÇO BASE LIMPO) ---
-            if not st.session_state.modo_mestre:
-                return f"₽ {preco_original:,.2f}", ""
+    # Validação e conversão segura para float
+    try:
+        if pd.isnull(preco_raw) or preco_raw is None:
+            return "Inestimável", ""
+        preco_original = float(preco_raw)
+    except (ValueError, TypeError):
+        return "Inestimável", ""
 
-            # --- VISÃO EXCLUSIVA DO MESTRE (COM FLUTUAÇÃO) ---
-            tipo_item = row["Tipo"]
-            mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
-            preco_final = preco_original * mod
-            pct = int(abs(mod - 1.0) * 100)
+    if preco_original == 0:
+        return "Grátis / Inestimável", ""
 
-            if mod > 1.0:
-                status = f"📈 +{pct}% (Alta)"
-            elif mod < 1.0:
-                status = f"📉 -{pct}% (Desconto)"
-            else:
-                status = "⚖️ Base"
+    # --- VISÃO DO JOGADOR (PREÇO BASE LIMPO) ---
+    if not st.session_state.modo_mestre:
+        return f"₽ {preco_original:,.2f}", ""
 
-            return f"₽ {preco_final:,.2f}", status
+    # --- VISÃO EXCLUSIVA DO MESTRE (COM FLUTUAÇÃO) ---
+    tipo_item = row["Tipo"]
+    mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
+    preco_final = preco_original * mod
+    pct = int(abs(mod - 1.0) * 100)
+
+    if mod > 1.0:
+        status = f"📈 +{pct}% (Alta)"
+    elif mod < 1.0:
+        status = f"📉 -{pct}% (Desconto)"
+    else:
+        status = "⚖️ Base"
+
+    return f"₽ {preco_final:,.2f}", status
 
         visualizacao = st.radio("Modo de Visualização:", ["📋 Fichas Detalhadas", "📊 Tabela Geral"], horizontal=True)
 
