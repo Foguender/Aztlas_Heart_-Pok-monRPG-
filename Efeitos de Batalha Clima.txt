@@ -1,8 +1,0 @@
-Efeitos de Batalha: Clima
-
-Sol Intenso (Harsh Sun): Ataques de fogo ganham vantagem na rolagem de dano; Ataques de Água ganham desvantagem na rolagem de dano; "Solar Beam" e "Solar Blade" perdem o turno de carga; O move Weather Ball muda seu tipo para Fogo; "Morning Sun" "Synthesis" e "Moonlight" recuperam 2/3 do HP máximo; "Thunder" e "Hurricane" tem desvantagem na rolagem de Ataque; Previne Pokémon de serem Congelados; Pokémon com "Harvest" têm 100% de chance de recuperar a berry consumida; Ativa as habilidades: "Clorophyll", "Forecast", "Dry Skin", "Leaf Guard", "Solar Power" e "Flower Gift".
-Chuva (Rain): Ataques de Água ganham vantagem na rolagem de dano; Ataques de Fogo ganham desvantagem na rolagem de dano. Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano; Muda o tipo do move Weather Ball para Água; "Morning Sun" "Synthesis" e "Moonlight" recuperam 1/4 do HP máximo; "Thunder" e "Hurricane" ganham vantagem na Rolagem de Ataque; Ativa as habilidades: "Swift Swim", "Forecast", "Dry Skin", "Rain Dish", "Hydration".
-Granizo (Hail): Ao final de cada rodada, cada Pokémon sofre um dano de tipo Gelo equivalente ao seu level, exceto os que possuem o tipo Ice (Gelo) e que tenham as habilidades Ice Body, Snow Cloak, Magic Guard e Overcoat;
-Tempestade de Areia (Sansdstorm)
-Névoa (Fog)
-Chuva Ácida (Acid Rain)
