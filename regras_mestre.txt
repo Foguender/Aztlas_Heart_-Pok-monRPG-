@@ -1,6 +1,7 @@
 ## Efeitos de Batalha: Clima
 
 ### **Sol Intenso (Harsh Sun):**
+* Normalmente dura 5 rodadas. A não ser que o pokémon que criou esse clima esteja segurando uma "Heat Rock"
 * Ataques de fogo ganham vantagem na rolagem de dano; Ataques de Água ganham desvantagem na rolagem de dano;
 * "Solar Beam" e "Solar Blade" perdem o turno de carga;
 * O move Weather Ball muda seu tipo para Fogo e dobra o seu poder;
@@ -11,6 +12,7 @@
 * Ativa as habilidades: "Clorophyll", "Forecast", "Dry Skin", "Leaf Guard", "Solar Power" e "Flower Gift".
 
 ### **Chuva (Rain):**
+* Normalmente dura 5 rodadas. A não ser que o pokémon que criou esse clima esteja segurando uma "Damp Rock"
 * Ataques de Água ganham vantagem na rolagem de dano; Ataques de Fogo ganham desvantagem na rolagem de dano.
 * Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano;
 * Muda o tipo do move Weather Ball para Água e dobra o seu poder;
@@ -19,7 +21,8 @@
 * Ativa as habilidades: "Swift Swim", "Forecast", "Dry Skin", "Rain Dish" e "Hydration".
 
 ### **Granizo (Hail):**
-* Ao final de cada rodada, cada Pokémon sofre um dano de tipo Gelo equivalente ao seu level, exceto os que possuem o tipo Ice (Gelo) e que tenham as habilidades Ice Body, Snow Cloak, Magic Guard e Overcoat;
+* Normalmente dura 5 rodadas. A não ser que o pokémon que criou esse clima esteja segurando uma "Icy Rock"
+* No início do turno de uma criatura, ela sofre um dano de tipo Gelo equivalente ao nível da criatura que criou esse clima, exceto os que possuem o tipo Ice (Gelo) e que tenham as habilidades Ice Body, Snow Cloak, Magic Guard e Overcoat;
 * Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano;
 * Muda o tipo do move Weather Ball para Gelo e dobra o seu poder;
 * "Morning Sun" "Synthesis" e "Moonlight" recuperam 1/4 do HP máximo;
@@ -28,7 +31,8 @@
 * Ativa as habilidades: "Slush Rush", "Forecast", "Ice Body" e "Snow Cloak".
 
 ### **Tempestade de Areia (Sansdstorm):**
-* Ao final de cada rodada, cada Pokémon sofre um dano de tipo Pedra equivalente ao seu level, exceto os que possuem os tipos Rock (Pedra), Ground (Terrestre) ou Steel (Aço), e que tenham as habilidades Sand Force, Sand Rush, Sand Veil, Magic Guard e Overcoat;
+* Normalmente dura 5 rodadas. A não ser que o pokémon que criou esse clima esteja segurando uma "Smooth Rock"
+* No início do turno de uma criatura, ela sofre um dano de tipo Pedra equivalente ao nível da criatura que criou esse clima, exceto os que possuem os tipos Rock (Pedra), Ground (Terrestre) ou Steel (Aço), e que tenham as habilidades Sand Force, Sand Rush, Sand Veil, Magic Guard e Overcoat;
 * Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano;
 * Muda o tipo do move Weather Ball para Pedra e dobra o seu poder;
 * "Morning Sun" "Synthesis" e "Moonlight" recuperam 1/4 do HP máximo;
@@ -42,7 +46,8 @@
 * "Morning Sun" "Synthesis" e "Moonlight" recuperam 1/4 do HP máximo.
 
 ### **Chuva Ácida (Acid Rain):**
-* Ao final de cada rodada, cada Pokémon sofre um dano de tipo Venenoso equivalente ao seu level, exceto os que possuem os tipos Venenoso (Poison) e Aço (Steel), e que tenham as habilidades Snow Cloak, Magic Guard e Overcoat;
+* Normalmente dura 5 rodadas. A não ser que o pokémon que criou esse clima esteja segurando uma "Black Sludge"
+* No início do turno de uma criatura, ela sofre um dano de tipo Venenoso equivalente ao nível da criatura que criou esse clima, exceto os que possuem os tipos Venenoso (Poison) e Aço (Steel), e que tenham as habilidades Snow Cloak, Magic Guard e Overcoat;
 * Pokémon Venenosos recuperam 1d8 de sua vida;
 * Ataques do tipo Venenoso ganham vantagem na Rolagem de Dano;
 * Qualquer Pokémon que esteja na Chuva Ácida ficará automaticamente "Gravemente Envenenado", Pokémon de tipo Aço ficarão apenas "Envenenado"[^1]  e Pokémon do tipo Poison não sofre nenhuma consequência.
@@ -79,9 +84,11 @@
 > [!NOTE]
 > Um Pokémon pode ser afetado por uma condição de Status Não-Volátil e por uma ou mais condições de Status Voláteis.
 
-* **Dormindo:** A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido
-* **Confuso:** 
-* **Atordoado:**
+* **Dormindo:** A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido. Se retornado para a pokébola, acontagem de rodadas do Pokémon é pausada, até ser libertado. Role 1d20 quando sujeito a um Move e no final de seus turnos, desperta com um 11 ou mais.
+
+* **Confuso:** A criatura é afetada pelas próximas 3 rodadas. Perde a capacidade de realizar reações e se move à metade da velocidade de movimento. Ao selecionar um Move, role 1d20 à mais. Com um resultado de 10 ou menos, machuca-se com dano igual ao seu bônus de Prof., e o move falha. Com um resultado de 16 ou mais, não está mais confuso.
+
+* **Atordoado:** Desvantagem em qualquer rolagem de ataque, teste de habilidade ou teste de resistência que fizer antes do final do próximo turno.
 
 ### - Condições de Status do D&D -
 
