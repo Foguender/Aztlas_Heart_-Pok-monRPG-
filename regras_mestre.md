@@ -92,4 +92,12 @@
 
 ### - Condições de Status do D&D -
 
-![Tabela de Resistências e Imunidades](https://github.com/Foguender/Aztlas_Heart_-Pok-monRPG-/blob/main/Tabela%20-%20N%C3%A3o%20Efetivo%20Simplificado.png)
+# 🛡️ Tabela de Tipos e Efetividade
+
+### ⚡ Super Efetivo
+![Tabela Super Efetivo](https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/Tabela%20-%20Super%20Efetivo%20Simplificado.png)
+
+---
+
+### 🛡️ Não Efetivo e Imunidades
+![Tabela Nao Efetivo](https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/Tabela%20-%20N%C3%A3o%20Efetivo%20Simplificado.png)
