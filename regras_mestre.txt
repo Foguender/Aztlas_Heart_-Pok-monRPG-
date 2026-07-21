@@ -56,32 +56,32 @@
 
 ### - Condições causadas por Moves -
 
-* **Semeado (Seeded):** ### Efeito do Move "Leech Seed" - O pokémon alvo desse move, recebe 1d4 de dano de Planta no final de cada turno. Metade desse dano (arredondado para cima) é restaurado para o pokémon usuário desse ataque, ou quaisquer pokémon subsequente usado pelo treinador, enquanto o pokémon que sofreu estiver em campo.
+* **Semeado (Seeded):** Efeito do Move "Leech Seed" - O pokémon alvo desse move, recebe 1d4 de dano de Planta no final de cada turno. Metade desse dano (arredondado para cima) é restaurado para o pokémon usuário desse ataque, ou quaisquer pokémon subsequente usado pelo treinador, enquanto o pokémon que sofreu estiver em campo.
 
-* **Amaldiçoado (Cursed): Efeito do Move "Curse" (quando utilizado por um pokémon de tipo Fantasma) - Recebe 1d6 de dano Fantasma ao final da cada turno por 1 minuto.
+* **Amaldiçoado (Cursed):** Efeito do Move "Curse" (quando utilizado por um pokémon de tipo Fantasma) - Recebe 1d6 de dano Fantasma ao final da cada turno por 1 minuto.
 
-* Sonolento (Sleepy): Efeito do move "Yawn" - Após receber essa condição, se você ainda estiver em campo no final do próximo turno, você adormece.
+* **Sonolento (Sleepy):** Efeito do move "Yawn" - Após receber essa condição, se você ainda estiver em campo no final do próximo turno, você adormece.
 
 ### - Condições de Status (Não Voláteis) -
 
-* Envenenado: Tipos Aço e Venenoso são imunes. O Pokémon envenenado recebe uma quantia de dano igual ao seu bônus de proficiência.
+* **Envenenado:** Tipos Aço e Venenoso são imunes. O Pokémon envenenado recebe uma quantia de dano igual ao seu bônus de proficiência.
 
-* Gravemente Envenenado: Tipos Aço e Venenoso são imunes. O Pokémon envenenado recebe uma quantia de dano igual ao seu bônus de proficiência, a cada turno o multiplicador do bônus de Prof. aumenta em +1. O Pokémon que recebeu essa condição também terá desvantagem em rolagens de Ataque e Habilidades.
+* **Gravemente Envenenado:** Tipos Aço e Venenoso são imunes. O Pokémon envenenado recebe uma quantia de dano igual ao seu bônus de proficiência, a cada turno o multiplicador do bônus de Prof. aumenta em +1. O Pokémon que recebeu essa condição também terá desvantagem em rolagens de Ataque e Habilidades.
 
-* Congelado: Tipos Gelo são imunes. Incapacitado e Impedido. A criatura congelada faz um teste de FOR no final de cada um dos turnos para se libertar. A CD é (10 + bônus de Prof. da criatura que causou o congelamento). Fora de combate a condição dura 1h. O status de Congelado acaba se a criatura congelada for atacada por algum Move que a deixe Queimada (sem deixar queimada).
+* **Congelado:** Tipos Gelo são imunes. Incapacitado e Impedido. A criatura congelada faz um teste de FOR no final de cada um dos turnos para se libertar. A CD é (10 + bônus de Prof. da criatura que causou o congelamento). Fora de combate a condição dura 1h. O status de Congelado acaba se a criatura congelada for atacada por algum Move que a deixe Queimada (sem deixar queimada).
 
-* Queimado: Tipos Fogo são imunes. O Pokémon Queimado recebe uma quantia de dano igual ao seu bônus de proficiência. A criatura também tem desvantagem na rolagem de Ataque de Moves físicos.
+* **Queimado:** Tipos Fogo são imunes. O Pokémon Queimado recebe uma quantia de dano igual ao seu bônus de proficiência. A criatura também tem desvantagem na rolagem de Ataque de Moves físicos.
 
-* Paralisado: Tipos Elétricos são imunes. Desvantagem em qualquer teste de resistência de FOR ou DES. O Pokémon tem sua velocidade de deslocamento reduzida pela metade. No início do turno da criatura paralisada, role 1d4. Se o resultado for 1 o Pokémon ficará Incapacitado e Impedido, e perde sua ação e sua ação bônus para o treinador.
+* **Paralisado:** Tipos Elétricos são imunes. Desvantagem em qualquer teste de resistência de FOR ou DES. O Pokémon tem sua velocidade de deslocamento reduzida pela metade. No início do turno da criatura paralisada, role 1d4. Se o resultado for 1 o Pokémon ficará Incapacitado e Impedido, e perde sua ação e sua ação bônus para o treinador.
 
 ### - Condição de Status (Voláteis) - 
 
 > [!NOTE]
 > Um Pokémon pode ser afetado por uma condição de Status Não-Volátil e por uma ou mais condições de Status Voláteis.
 
-* Dormindo: A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido
-* Confuso: 
-* Atordoado
+* **Dormindo:** A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido
+* **Confuso:** 
+* **Atordoado:**
 
 ### - Condições de Status do D&D -
 
