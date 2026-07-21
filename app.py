@@ -494,7 +494,7 @@ if st.session_state.modo_mestre:
             st.subheader("📜 Regras Rápidas & Tabelas de Apoio")
 
             caminho_regras = os.path.join(
-                os.path.dirname(__file__), "regras_mestre.txt"
+                os.path.dirname(__file__), "regras_mestre.md"
             )
 
             if os.path.exists(caminho_regras):
@@ -504,8 +504,8 @@ if st.session_state.modo_mestre:
                 st.markdown(conteudo_regras)
             else:
                 st.info(
-                    "📄 O arquivo `regras_mestre.txt` não foi encontrado na pasta do projeto."
+                    "📄 O arquivo `regras_mestre.md` não foi encontrado na pasta do projeto."
                 )
                 st.caption(
-                    "Crie o arquivo `regras_mestre.txt` na mesma pasta do `app.py` para exibir suas regras e tabelas aqui."
+                    "Crie o arquivo `regras_mestre.md` na mesma pasta do `app.py` para exibir suas regras e tabelas aqui."
                 )
