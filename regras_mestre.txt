@@ -1,6 +1,6 @@
-Efeitos de Batalha: Clima
+### Efeitos de Batalha: Clima
 
-Sol Intenso (Harsh Sun):
+# **Sol Intenso (Harsh Sun):**
 * Ataques de fogo ganham vantagem na rolagem de dano; Ataques de Água ganham desvantagem na rolagem de dano;
 * "Solar Beam" e "Solar Blade" perdem o turno de carga;
 * O move Weather Ball muda seu tipo para Fogo e dobra o seu poder;
@@ -10,7 +10,7 @@ Sol Intenso (Harsh Sun):
 * Pokémon com "Harvest" têm 100% de chance de recuperar a berry consumida;
 * Ativa as habilidades: "Clorophyll", "Forecast", "Dry Skin", "Leaf Guard", "Solar Power" e "Flower Gift".
 
-Chuva (Rain):
+# **Chuva (Rain):**
 * Ataques de Água ganham vantagem na rolagem de dano; Ataques de Fogo ganham desvantagem na rolagem de dano.
 * Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano;
 * Muda o tipo do move Weather Ball para Água e dobra o seu poder;
@@ -18,7 +18,7 @@ Chuva (Rain):
 * "Thunder" e "Hurricane" ganham vantagem na Rolagem de Ataque;
 * Ativa as habilidades: "Swift Swim", "Forecast", "Dry Skin", "Rain Dish" e "Hydration".
 
-Granizo (Hail):
+# **Granizo (Hail):**
 * Ao final de cada rodada, cada Pokémon sofre um dano de tipo Gelo equivalente ao seu level, exceto os que possuem o tipo Ice (Gelo) e que tenham as habilidades Ice Body, Snow Cloak, Magic Guard e Overcoat;
 * Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano;
 * Muda o tipo do move Weather Ball para Gelo e dobra o seu poder;
@@ -27,7 +27,7 @@ Granizo (Hail):
 * Permite o uso do move "Aurora Veil" que pode continuar em campo mesmo após o granizo se dissipar;
 * Ativa as habilidades: "Slush Rush", "Forecast", "Ice Body" e "Snow Cloak".
 
-Tempestade de Areia (Sansdstorm):
+# **Tempestade de Areia (Sansdstorm):**
 * Ao final de cada rodada, cada Pokémon sofre um dano de tipo Pedra equivalente ao seu level, exceto os que possuem os tipos Rock (Pedra), Ground (Terrestre) ou Steel (Aço), e que tenham as habilidades Sand Force, Sand Rush, Sand Veil, Magic Guard e Overcoat;
 * Os moves "Solar Beam" e "Solar Blade" têm desvantagem na Rolagem de Dano;
 * Muda o tipo do move Weather Ball para Pedra e dobra o seu poder;
@@ -35,29 +35,32 @@ Tempestade de Areia (Sansdstorm):
 * Faz com que o move "Shore Up" recupere 2/3 da vida do usuário;
 * Ativa as habilidades: "Sand Force", "Sand Veil" e "Sand Rush".
 
-Neblina (Fog):
+# **Neblina (Fog):**
 * Todos os Pokémon, que estão em contato direto com a Neblina, tem desvantagem na Rolagem de Ataque;
 * Dobra o poder da Weather Ball;
 * Faz com que Mel não possa ser usado para atrair Pokémon;
 * "Morning Sun" "Synthesis" e "Moonlight" recuperam 1/4 do HP máximo.
 
-Chuva Ácida (Acid Rain):
+# **Chuva Ácida (Acid Rain):**
 * Ao final de cada rodada, cada Pokémon sofre um dano de tipo Venenoso equivalente ao seu level, exceto os que possuem os tipos Venenoso (Poison) e Aço (Steel), e que tenham as habilidades Snow Cloak, Magic Guard e Overcoat;
 * Pokémon Venenosos recuperam 1d8 de sua vida;
 * Ataques do tipo Venenoso ganham vantagem na Rolagem de Dano;
-* Qualquer Pokémon que esteja na Chuva Ácida ficará automaticamente "Gravemente Envenenado", Pokémon de tipo Aço ficarão apenas "Envenenado" (ignorando a imunidade do tipo Aço) e Pokémon do tipo Poison não sofre nenhuma consequência.
+* Qualquer Pokémon que esteja na Chuva Ácida ficará automaticamente "Gravemente Envenenado", Pokémon de tipo Aço ficarão apenas "Envenenado"[^1]  e Pokémon do tipo Poison não sofre nenhuma consequência.
 
-> Nota do Mestre: Os Max-Moves "Max Geyser", "Max Flare", "Max Rockfall" e "Max Hailstorm" invocam Chuva, Sol Intenso, Tempestade de Areia e Granizo, nessa ordem.
+[^1]: Ignora a imunidade do tipo Metal
 
-Efeitos de Batalha: Status
+> [!NOTE]
+> Os Max-Moves "Max Geyser", "Max Flare", "Max Rockfall" e "Max Hailstorm" invocam Chuva, Sol Intenso, Tempestade de Areia e Granizo, nessa ordem.
 
-- Condições causadas por Moves -
+### Efeitos de Batalha: Status
 
-* Semeado (Seeded): Efeito do Move "Leech Seed" - O pokémon alvo desse move, recebe 1d4 de dano de Planta no final de cada turno. Metade desse dano (arredondado para cima) é restaurado para o pokémon usuário desse ataque, ou quaisquer pokémon subsequente usado pelo treinador, enquanto o pokémon que sofreu estiver em campo.
+## - Condições causadas por Moves -
 
-* Amaldiçoado (Cursed): Efeito do Move "Curse" (quando utilizado por um pokémon de tipo Fantasma) - Recebe 1d6 de dano Fantasma ao final da cada turno por 1 minuto.
+# * **Semeado (Seeded):** Efeito do Move "Leech Seed" - O pokémon alvo desse move, recebe 1d4 de dano de Planta no final de cada turno. Metade desse dano (arredondado para cima) é restaurado para o pokémon usuário desse ataque, ou quaisquer pokémon subsequente usado pelo treinador, enquanto o pokémon que sofreu estiver em campo.
 
-* Sonolento (Sleepy): Efeito do move "Yawn" - Após receber essa condição, se você ainda estiver em campo no final do próximo turno, você adormece.
+# * **Amaldiçoado (Cursed): Efeito do Move "Curse" (quando utilizado por um pokémon de tipo Fantasma) - Recebe 1d6 de dano Fantasma ao final da cada turno por 1 minuto.
+
+# * Sonolento (Sleepy): Efeito do move "Yawn" - Após receber essa condição, se você ainda estiver em campo no final do próximo turno, você adormece.
 
 - Condições de Status (Não Voláteis) -
 
@@ -70,3 +73,16 @@ Efeitos de Batalha: Status
 * Queimado: Tipos Fogo são imunes. O Pokémon Queimado recebe uma quantia de dano igual ao seu bônus de proficiência. A criatura também tem desvantagem na rolagem de Ataque de Moves físicos.
 
 * Paralisado: Tipos Elétricos são imunes. Desvantagem em qualquer teste de resistência de FOR ou DES. O Pokémon tem sua velocidade de deslocamento reduzida pela metade. No início do turno da criatura paralisada, role 1d4. Se o resultado for 1 o Pokémon ficará Incapacitado e Impedido, e perde sua ação e sua ação bônus para o treinador.
+
+- Condição de Status (Voláteis) - 
+
+> [!NOTE]
+> Um Pokémon pode ser afetado por uma condição de Status Não-Volátil e por uma ou mais condições de Status Voláteis.
+
+* Dormindo: A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido
+* Confuso: 
+* Atordoado
+
+- Condições de Status do D&D -
+
+*
