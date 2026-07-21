@@ -92,4 +92,4 @@
 
 ### - Condições de Status do D&D -
 
-![Tabela de Resistências e Imunidades](Foguender/Aztlas_Heart_-Pok-monRPG-/blob/main/Tabela - Não Efetivo Simplificado.png)
+![Tabela de Resistências e Imunidades](https://github.com/Foguender/Aztlas_Heart_-Pok-monRPG-/blob/main/Tabela%20-%20N%C3%A3o%20Efetivo%20Simplificado.png)
