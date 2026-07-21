@@ -98,7 +98,7 @@ st.sidebar.subheader("🔐 Painel de Acesso")
 
 senha = st.sidebar.text_input("Senha do Mestre:", type="password")
 
-if senha == "Dusk_0256":
+if senha == "aztlas2026":
     st.session_state.modo_mestre = True
     st.sidebar.success("⚔️ Modo Mestre Ativo!")
 else:
@@ -491,4 +491,21 @@ if st.session_state.modo_mestre:
                         st.write(f"• **{cat}**: ⚖️ **0%** (Preço Base Original)")
 
         with sub_regras:
-            st.info("Espaço reservado para anotações rápidas do Mestre.")
+            st.subheader("📜 Regras Rápidas & Tabelas de Apoio")
+
+            caminho_regras = os.path.join(
+                os.path.dirname(__file__), "regras_mestre.md"
+            )
+
+            if os.path.exists(caminho_regras):
+                with open(caminho_regras, "r", encoding="utf-8") as f:
+                    conteudo_regras = f.read()
+
+                st.markdown(conteudo_regras)
+            else:
+                st.info(
+                    "📄 O arquivo `regras_mestre.md` não foi encontrado na pasta do projeto."
+                )
+                st.caption(
+                    "Crie o arquivo `regras_mestre.md` na mesma pasta do `app.py` para exibir suas regras e tabelas aqui."
+                )
