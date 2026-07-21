@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 # Configuração da página
-st.set_page_config(page_title="PokéDex & Itens Aztlas", page_icon="🐾", layout="wide")
+st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
 
 # -----------------------------------------------------------------------------
@@ -92,13 +92,13 @@ def gerar_flutuacao_automatica(categorias):
 # -----------------------------------------------------------------------------
 # 3. PAINEL DE ACESSO (BARRA LATERAL)
 # -----------------------------------------------------------------------------
-st.sidebar.title("🔮 Aztlas-Heart")
+st.sidebar.title("Pocket & Monsters RPG")
 st.sidebar.markdown("---")
-st.sidebar.subheader("🔐 Painel de Acesso")
+st.sidebar.subheader("Painel de Acesso")
 
 senha = st.sidebar.text_input("Senha do Mestre:", type="password")
 
-if senha == "aztlas2026":
+if senha == "Dusk_0256":
     st.session_state.modo_mestre = True
     st.sidebar.success("⚔️ Modo Mestre Ativo!")
 else:
