@@ -13,9 +13,9 @@ Efeitos de Batalha: Status
 
 -Condições causadas por Moves-
 
-Semeado (Seeded): Efeito do Move "Leech Seed"
-	O pokémon alvo desse move, recebe 1d4 de dano de Planta no final de cada turno. Metade desse dano (arredondado para cima) é restaurado para o pokémon usuário desse ataque, ou quaisquer pokémon subsequente usado pelo treinador, enquanto o pokémon que sofreu estiver em campo.
-Amaldiçoado (Cursed): Efeito do Move "Curse" (quando utilizado por um pokémon de tipo Fantasma)
-	Recebe 1d6 de dano Fantasma ao final da cada turno por 1 minuto.
-Sonolento (Sleepy): Efeito do move "Yawn"
-	Após receber essa condição, se você ainda estiver em campo no final do próximo turno, você adormece.
+	Semeado (Seeded): Efeito do Move "Leech Seed"
+O pokémon alvo desse move, recebe 1d4 de dano de Planta no final de cada turno. Metade desse dano (arredondado para cima) é restaurado para o pokémon usuário desse ataque, ou quaisquer pokémon subsequente usado pelo treinador, enquanto o pokémon que sofreu estiver em campo.
+	Amaldiçoado (Cursed): Efeito do Move "Curse" (quando utilizado por um pokémon de tipo Fantasma)
+Recebe 1d6 de dano Fantasma ao final da cada turno por 1 minuto.
+	Sonolento (Sleepy): Efeito do move "Yawn"
+Após receber essa condição, se você ainda estiver em campo no final do próximo turno, você adormece.
