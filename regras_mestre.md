@@ -47,9 +47,10 @@
 
 ### **Chuva Ácida (Acid Rain):**
 * Normalmente dura 5 rodadas. A não ser que o pokémon que criou esse clima esteja segurando uma "Black Sludge"
-* No início do turno de uma criatura, ela sofre um dano de tipo Venenoso equivalente ao nível da criatura que criou esse clima, exceto os que possuem os tipos Venenoso (Poison) e Aço (Steel), e que tenham as habilidades Snow Cloak, Magic Guard e Overcoat;
+* No início do turno de uma criatura, ela sofre um dano de tipo Venenoso equivalente ao nível da criatura que criou esse clima, exceto os que possuem os tipos Venenoso (Poison) e Aço (Steel), e que tenham as habilidades "Snow Cloak", "Poison Heal", "Magic Guard" e "Overcoat";
 * Pokémon Venenosos recuperam 1d8 de sua vida;
 * Ataques do tipo Venenoso ganham vantagem na Rolagem de Dano;
+* Pokémon que tenham a habilidade "Poison Heal" recuperam 1/5 de sua vida a cada turno
 * Qualquer Pokémon que esteja na Chuva Ácida ficará automaticamente "Gravemente Envenenado", Pokémon de tipo Aço ficarão apenas "Envenenado"[^1]  e Pokémon do tipo Poison não sofre nenhuma consequência.
 
 [^1]: Ignora a imunidade do tipo Metal
@@ -88,9 +89,45 @@
 
 * **Confuso:** A criatura é afetada pelas próximas 3 rodadas. Perde a capacidade de realizar reações e se move à metade da velocidade de movimento. Ao selecionar um Move, role 1d20 à mais. Com um resultado de 10 ou menos, machuca-se com dano igual ao seu bônus de Prof., e o move falha. Com um resultado de 16 ou mais, não está mais confuso.
 
-* **Atordoado:** Desvantagem em qualquer rolagem de ataque, teste de habilidade ou teste de resistência que fizer antes do final do próximo turno.
+* **Atordoado:** Desvantagem em qualquer rolagem de ataque, teste de habilidade ou teste de resistência que fizer antes do final do próximo turno. Se ativar um Move que exige um teste de resistência durante esse tempo, o alvo tem vantagem na rolagem.
 
 ### - Condições de Status do D&D -
+
+* **Cego (Blinded:)** Uma criatura cega não pode ver e falha em qualquer teste de habilidade que exija visão. Rolagens de ataque contra a criatura têm vantagem. As rolagens da criatura cega têm desvantagem.
+
+* **Enfeitiçado (Charmed):** Uma criatura enfeitiçada não pode atacar ou direcionar habilidades ou efeitos mágicos prejudiciais contra o feiticeiro.
+
+* **Ensurdecido (Deafened):** Uma criatura ensurdecida não pode ouvir e falha em qualquer teste de habilidade que exija audição.
+
+* **Amedrontado (Frightened):** Uma criatura aterrorizada tem desvantagem em testes de habilidade e rolagens de ataque enquanto a fonte do efeito de medo estiver em sua linha de visão. A criatura não pode se mover voluntariamente em direção à fonte do efeito de medo.
+
+* **Imobilizado (Grappled):** A velocidade da criatura imobilizada se torna 0, e ela não pode se beneficiar de qualquer bônus à velocidade. A condição termina se o imobilizador for incapacitado. A condição também termina se um efeito remover a criatura imobilizada do imobilizador ou do efeito de imobilização.
+
+* **Incapacitado (Incapacitaded):** Uma criatura incapacitada não pode realizar ações ou reações.
+
+* **Impedido (Restrained):** A velocidade de uma criatura restrita é 0, e ela não pode se beneficiar de qualquer bônus à velocidade. Rolagens de ataque contra a criatura têm vantagem. As rolagens de ataque da criatura têm desvantagem.
+
+* **Invisível (Invisible):** Uma criatura invisível não pode ser vista, exceto por magia ou sentido especial, mas pode ser detectada se fizer barulho. Uma criatura invisível é considerada fortemente obscurecida para fins de esconderijo. As rolagens de ataque contra uma criatura invisível têm desvantagem. Uma criatura invisível tem vantagem em rolagens de Ataque.
+
+* **Petrificado (Petrified):** Uma criatura petrificada é transformada, junto com qualquer objeto não-mágico em sua posse, em uma substância sólida inanimada. Seu peso aumenta em um fator de 10, e ela deixa de envelhecer. A criatura está incapacitada, não pode se mover ou falar, e está inconsciente de seus arredores. A criatura falha automaticamente em testes de resistência de FOR e DES. Rolagens de ataque contra a criatura têm vantagem. A criatura tem resistência a todos os tipos de dano. A criatura é imune a veneno e doenças, mas qualquer veneno já em seu sistema é suspenso, mas não neutralizado.
+
+* **Caído (Prone):** A única movimentação de uma criatura caída é rastejar. A criatura tem desvantagem em todas as rolagens de ataque. Um ataque contra a criatura tem vantagem se o atacante estiver a até 5 pés (1,5 metros). Caso contrário, o atacante tem desvantagem. Levantar-se do estado caído custa metade da velocidade da criatura.
+
+* **Atordoado (Stunned):** Uma criatura atordoada está incapacitada, não pode se mover, e só fala de maneira vacilante. A criatura falha automaticamente em testes de resistência de FOR
+e DES. Rolagens de ataque contra a criatura têm vantagem.
+
+* **Inconciente (Unconcious):** Uma criatura inconsciente está incapacitada, não pode se mover ou falar, e está inconsciente de seus arredores. A criatura solta o que estiver segurando e cai no estado caído. A criatura falha automaticamente em testes de resistência de FOR e DES. Rolagens de ataque contra a criatura têm vantagem. Qualquer ataque que acerte a criatura é considerado um acerto crítico se o atacante estiver a até 5 pés (1,5 metros).
+
+* **Exausto (Exhausted):** A exaustão é medida em seis níveis. Um efeito pode causar um ou mais níveis de exaustão em uma criatura. Se uma criatura já exausta sofrer outro efeito que cause exaustão, seu nível atual de exaustão aumenta pelo valor especificado no efeito, e a criatura sofre os efeitos do seu nível atual, bem como todos os níveis inferiores.
+
+| Nível | Efeito |
+| ----------- | ----------- |
+| 1 | Desvantagem em todos os Testes de Habilidade |
+| 2 | Velocidade reduzida à metade |
+| 3 | Desvantagem em Testes de Resistência e rolagens de ataque |
+| 4 | Máximo de vida reduzido à metade |
+| 5 | Velocidade reduzida a 0 |
+| 6 | Morte |
 
 # 🛡️ Tabela de Tipos e Efetividade
 
