@@ -1,6 +1,5 @@
 ## **Combate**
 > [AVISO]:
-> 
 > 1 turno é equivalente a 6 turnos;
 > Um treinador pode comandar um pokémon que esteja até 30m de distância. Se o Pokémon se afastar além desse limite, ele passa a agir por conta própria.
 
@@ -91,7 +90,7 @@ Uma reação acontece em resposta a outra coisa. É um reflexo ou resposta autom
 
 [^1]: Ignora a imunidade do tipo Metal
 
-> [NOTA]  
+> [NOTA]:
 > Os Max-Moves "Max Geyser", "Max Flare", "Max Rockfall" e "Max Hailstorm" invocam Chuva, Sol Intenso, Tempestade de Areia e Granizo, nessa ordem.
 
 ## Efeitos de Batalha: Status
