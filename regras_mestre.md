@@ -1,4 +1,6 @@
-# **ESCUDO DO MESTRE** 
+# **REGRAS DO ESCUDO DO MESTRE** 
+
+
 
 ## Efeitos de Batalha: Clima
 
@@ -144,6 +146,14 @@ Uma criatura "No Chão" é qualquer criatura sem velocidade de voo ou flutuaçã
 **Descanso Longo:** Um Descanso Longo tem duração de pelo menos 8 horas, durante as quais um personagem dorme ou realiza atividades leves como ler, conversar, comer ou ficar de guarda por no máximo 2 horas. Se um Descanso Longo for interrompido por uma luta, pelo menos 1 hora de caminhada, ou outras atividades de aventura, os personagens devem reiniciar o Descanso Longo para obter qualquer benefício. Ao final de um Descanso Longo, um personagem recupera todos os Pontos de Vida perdidos e todos os Dados de Vida gastos, até metade do total de Dados de Vida do personagem. Um personagem não pode se beneficiar de mais de um Descanso Longo em um período de 24 horas. Um personagem deve ter pelo menos 1 Ponto de Vida no início do descanso para obter qualquer benefício. Pokémon (incluindo aqueles que desmaiaram) recuperam toda a saúde e PP, e se curam de efeitos de status.
 
 **Centros Pokémon:** Pokécenters são pequenas instalações semelhantes a hospitais que podem curar seus Pokémon completamente, recuperando vida, curando efeito de status e recuperando todos os PP em menos de 30 minutos.
+
+## **Luz, Visão e Sentidos**
+* Em uma área de escuridão leve, como penumbra, névoa disforme ou folhagem moderada, as criaturas têm desvantagem em testes de Sabedoria (Percepção) que dependem de visão.
+* Uma área de escuridão densa – como escuridão, nevoeiro espesso ou folhagem densa – bloqueia a visão completamente. Uma criatura em uma área de escuridão densa está efetivamente cega quando tenta ver algo obscurecido pela escuridão.
+* **Percepção às cegas (Blindsight):** Uma criatura com percepção às cegas pode perceber seus arredores sem depender de visão dentro de um raio específico.
+* **Visão no escuro (Darkvision):** Dentro de um alcance específico, uma criatura com visão no escuro pode enxergar na escuridão total como se fosse na penumbra. No entanto, a criatura não pode discernir cores na escuridão, apenas tons de cinza.
+* **Visão verdadeira (Truesight):** Uma criatura com visão verdadeira pode, dentro de um alcance específico, enxergar na escuridão total normal e mágica, ver criaturas e objetos invisíveis, detectar automaticamente ilusões visuais e ter sucesso em testes de resistência contra elas.
+* **Percepção Sísmica (Tremorsense):** Permite a uma criatura detectar e localizar vibrações no solo, identificando a posição exata de qualquer coisa em contato com a mesma superfície dentro do alcance.
 
 # 🛡️ **Tabela de Tipos e Efetividade**
 
