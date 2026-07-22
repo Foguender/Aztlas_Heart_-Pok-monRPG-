@@ -1,4 +1,4 @@
-
+# **ESCUDO DO MESTRE** 
 
 ## Efeitos de Batalha: Clima
 
@@ -137,6 +137,13 @@ Uma criatura "Elevada" é qualquer criatura que atualmente utilize sua velocidad
 
 #### **No chão (Grounded)**
 Uma criatura "No Chão" é qualquer criatura sem velocidade de voo ou flutuação, ou uma que seja derrubada ou tenha sua velocidade de voo ou flutuação reduzida a zero.
+
+## **Descansos**
+**Descanso Curto:** Um descanso curto pode durar pelo menos meia hora, durante o qual os personagens não podem fazer nada mais extenuante do que comer, beber, ler ou cuidar de ferimentos. Um personagem pode gastar um ou mais Dados de Vida no final de um Descanso Curto. Para cada Dado de Vida gasto dessa forma, o jogador rola o dado e adiciona o modificador de CON do personagem à rolagem, aplicando o total ao valor atual de Vida do personagem. O jogador pode decidir gastar um Dado de Vida extra após cada rolagem. Pokémon não recuperam PP e não se recuperam de desmaios. Além disso, Pokémon não se recuperam de condições de status não-voláteis.
+
+**Descanso Longo:** Um Descanso Longo tem duração de pelo menos 8 horas, durante as quais um personagem dorme ou realiza atividades leves como ler, conversar, comer ou ficar de guarda por no máximo 2 horas. Se um Descanso Longo for interrompido por uma luta, pelo menos 1 hora de caminhada, ou outras atividades de aventura, os personagens devem reiniciar o Descanso Longo para obter qualquer benefício. Ao final de um Descanso Longo, um personagem recupera todos os Pontos de Vida perdidos e todos os Dados de Vida gastos, até metade do total de Dados de Vida do personagem. Um personagem não pode se beneficiar de mais de um Descanso Longo em um período de 24 horas. Um personagem deve ter pelo menos 1 Ponto de Vida no início do descanso para obter qualquer benefício. Pokémon (incluindo aqueles que desmaiaram) recuperam toda a saúde e PP, e se curam de efeitos de status.
+
+**Centros Pokémon:** Pokécenters são pequenas instalações semelhantes a hospitais que podem curar seus Pokémon completamente, recuperando vida, curando efeito de status e recuperando todos os PP em menos de 30 minutos.
 
 # 🛡️ **Tabela de Tipos e Efetividade**
 
