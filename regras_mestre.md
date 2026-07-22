@@ -1,7 +1,5 @@
-# **REGRAS DO ESCUDO DO MESTRE** 
-
 ## **Combate**
-> ![IMPORTANT]
+> ![IMPORTANT]:
 > 1 turno é equivalente a 6 turnos
 
 ## Efeitos de Batalha: Clima
@@ -61,7 +59,7 @@
 
 [^1]: Ignora a imunidade do tipo Metal
 
-> [!NOTE]
+> [!NOTE]:
 > Os Max-Moves "Max Geyser", "Max Flare", "Max Rockfall" e "Max Hailstorm" invocam Chuva, Sol Intenso, Tempestade de Areia e Granizo, nessa ordem.
 
 ## Efeitos de Batalha: Status
@@ -88,7 +86,7 @@
 
 ### - Condição de Status (Voláteis) - 
 
-> [!NOTE]
+> [!NOTE]:
 > Um Pokémon pode ser afetado por uma condição de Status Não-Volátil e por uma ou mais condições de Status Voláteis.
 
 * **Dormindo:** A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido. Se retornado para a pokébola, acontagem de rodadas do Pokémon é pausada, até ser libertado. Role 1d20 quando sujeito a um Move e no final de seus turnos, desperta com um 11 ou mais.
