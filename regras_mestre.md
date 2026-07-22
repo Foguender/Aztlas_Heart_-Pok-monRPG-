@@ -1,6 +1,5 @@
 ## **Combate**
-> [AVISO]
->
+> [:Warning: AVISO]:
 > 1 turno é equivalente a 6 turnos
 > Um treinador pode comandar um pokémon que esteja até 30m de distância. Se o Pokémon se afastar além desse limite, ele passa a agir por conta própria.
 
