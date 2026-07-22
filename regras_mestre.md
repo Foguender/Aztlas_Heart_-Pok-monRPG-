@@ -117,7 +117,7 @@ Uma reação acontece em resposta a outra coisa. É um reflexo ou resposta autom
 
 ### - Condição de Status (Voláteis) - 
 
-> [NOTA]  
+> [NOTA]:
 > Um Pokémon pode ser afetado por uma condição de Status Não-Volátil e por uma ou mais condições de Status Voláteis.
 
 * **Dormindo:** A criatura é afetada pelas próximas 3 rodadas. Tem desvantagem em testes de resistência. Incapacitado e Impedido. Se retornado para a pokébola, acontagem de rodadas do Pokémon é pausada, até ser libertado. Role 1d20 quando sujeito a um Move e no final de seus turnos, desperta com um 11 ou mais.
