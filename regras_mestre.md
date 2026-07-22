@@ -10,21 +10,27 @@
 > * Uma ação completa.
 
 * **Ação Padrão**
+
 Basicamente, uma ação padrão permite que você execute uma tarefa. Usar um Move ou um item são as ações padrão mais comuns. Todas as ações padrão possíveis estão descritas em "Ações em Combate" mais à frente nesse capítulo. Muitas habilidades e Moves concedem ações adicionais.
 
 * **Ação de Movimento**
+
 Esta ação representa algum tipo de movimento físico. Seu uso mais comum é percorrer uma distância igual ao seu deslocamento. Levantar-se e pegar um item da mochila. A seção "Movimento e Posição" mais à frente nesse capítulo fornece as regras para seu movimento.
 
 * **Ação Completa**
+
 Este tipo de ação exige todo o tempo e esforço normais de uma rodada. Para realizá-la, você deve abrir mão de sua ação padrão e de sua ação de movimento, mas, normalmente, ainda pode realizar ações bônus, ações livres e reações.
 
 * **Ação Bônus**
+
 Habilidades, Moves e outras características podem permitir uma ação bônus no seu turno. Você só pode realizar uma ação bônus por turno.
 
 * **Ação Livre**
+
 Esta ação não exige quase nenhum tempo ou esforço, mas só pode ser feita no seu turno. Jogar-se no chão ou gritar uma ordem são ações livres, mas o mestre pode decidir que algo é complicado demais para ser livre.
 
 * **Reação**
+
 Uma reação acontece em resposta a outra coisa. É um reflexo ou resposta automática, que pode ocorrer mesmo fora do seu turno. O ataque de oportunidade é o tipo mais comum de reação. Quando você realiza uma reação, você não pode realizar outra até o início do seu próximo turno. Se sua reação interrompeu o turno de outra criatura, aquela criatura pode continuar o turno depois da reação.
 
 ## Efeitos de Batalha: Clima
