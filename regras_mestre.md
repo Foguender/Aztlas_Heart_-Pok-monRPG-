@@ -1,3 +1,5 @@
+
+
 ## Efeitos de Batalha: Clima
 
 ### **Sol Intenso (Harsh Sun):**
@@ -129,7 +131,14 @@ e DES. Rolagens de ataque contra a criatura têm vantagem.
 | 5 | Velocidade reduzida a 0 |
 | 6 | Morte |
 
-# 🛡️ Tabela de Tipos e Efetividade
+## **- Outras condições de Status -**
+#### **Elevado (Raised)**
+Uma criatura "Elevada" é qualquer criatura que atualmente utilize sua velocidade de voo ou flutuação, ou aquelas com a habilidade "Levitate", segurando um "Air Balloon", ou sob o efeito dos Moves "Magnet Rise" ou "Telekinesis".
+
+#### **No chão (Grounded)**
+Uma criatura "No Chão" é qualquer criatura sem velocidade de voo ou flutuação, ou uma que seja derrubada ou tenha sua velocidade de voo ou flutuação reduzida a zero.
+
+# 🛡️ **Tabela de Tipos e Efetividade**
 
 ### ⚡ Super Efetivo
 ![Tabela Super Efetivo](https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/Tabela%20-%20Super%20Efetivo%20Simplificado.png)
