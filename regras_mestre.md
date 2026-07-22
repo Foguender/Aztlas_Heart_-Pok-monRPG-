@@ -1,6 +1,8 @@
 # **REGRAS DO ESCUDO DO MESTRE** 
 
-
+## **Combate**
+> ![IMPORTANT]
+> 1 turno é equivalente a 6 turnos
 
 ## Efeitos de Batalha: Clima
 
