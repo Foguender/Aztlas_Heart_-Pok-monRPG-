@@ -191,23 +191,20 @@ with abas[0]:
             with aba1:
                 col1, col2 = st.columns([1, 2])
                 with col1:
-    # URL base apontando para o Raw do seu repositório:
-    github_base_url = "https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites"
-    
-    pokemon_id = poke_geral[0]
-    url_sprite = f"{github_base_url}/{pokemon_id}.png"
+                    github_base_url = "https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites"
+                    pokemon_id = poke_geral[0]
+                    url_sprite = f"{github_base_url}/{pokemon_id}.png"
 
-    st.image(
-        url_sprite,
-        caption=poke_geral[2],
-        use_container_width=True,
-    )
+                    st.image(
+                        url_sprite,
+                        caption=poke_geral[2],
+                        use_container_width=True,
+                    )
                 with col2:
                     st.subheader("Informações Biológicas")
                     if poke_desc:
                         st.markdown(f"**Espécie:** {poke_desc[0]}")
                         st.markdown(f"*\"{poke_desc[1]}\"*")
-
                     st.write("---")
                     st.markdown(
                         f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
