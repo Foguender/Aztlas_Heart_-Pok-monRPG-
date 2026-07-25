@@ -123,25 +123,36 @@ def buscar_detalhes_completos(pokemon_id):
         except Exception:
             evo_df = pd.DataFrame()
 
-        # 7. Localização / Spawns (COM DIAGNÓSTICO DE ERRO)
-        try:
-            query_loc = """
-                SELECT 
-                    l.Location AS [Local],
-                    lp.spawn_method AS [Método],
-                    lp.chance_rate AS [Chance],
-                    lp.min_level AS [Nível Mín],
-                    lp.max_level AS [Nível Máx],
-                    lp.time_of_day AS [Horário]
-                FROM "Locations_Pokemon" lp
-                JOIN Locations l ON lp.location_id = l.ID
-                WHERE lp.pokemon_id = ?
-            """
-            loc_df = pd.read_sql_query(query_loc, conn, params=(pokemon_id,))
-        except Exception as e:
-            # Exibe o erro exato na tela do Streamlit para descobrirmos o motivo
-            st.error(f"Erro SQL ao buscar localização: {e}")
-            loc_df = pd.DataFrame()
+        # 7. Localização / Spawns (COM FALLBACKS DE TABELA E DIAGNÓSTICO)
+        loc_df = pd.DataFrame()
+        
+        # Lista de nomes possíveis para a tabela de junção no seu banco
+        tabelas_possiveis = ["Locations_Pok mon", "Locations_Pokemon", "Locations_Pok_mon", "location_pokemon"]
+        
+        sucesso = False
+        for nome_tabela in tabelas_possiveis:
+            try:
+                query_loc = f"""
+                    SELECT 
+                        l.Location AS [Local],
+                        lp.spawn_method AS [Método],
+                        lp.chance_rate AS [Chance],
+                        lp.min_level AS [Nível Mín],
+                        lp.max_level AS [Nível Máx],
+                        lp.time_of_day AS [Horário]
+                    FROM "{nome_tabela}" lp
+                    JOIN Locations l ON lp.location_id = l.ID
+                    WHERE lp.pokemon_id = ?
+                """
+                loc_df = pd.read_sql_query(query_loc, conn, params=(pokemon_id,))
+                sucesso = True
+                break  # Se encontrou a tabela certa e executou, sai do loop
+            except Exception:
+                continue
+
+        # Se nenhuma das tabelas acima funcionou, exibe um aviso orientativo
+        if not sucesso:
+            st.warning("⚠️ Não foi possível localizar a tabela de cruzamento de spawns no banco SQLite. Verifique se o nome é 'Locations_Pok mon' ou similar.")
 
     return gerais, descricao, stats, breeding, moves_df, evo_df, loc_df
 
