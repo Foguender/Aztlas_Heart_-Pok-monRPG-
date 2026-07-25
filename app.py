@@ -211,6 +211,24 @@ with abas[0]:
                         f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
                     )
                     
+                    # 🎯 Tamanho na posição 5 e SR garantido como o ÚLTIMO item da tabela [-1]
+                    tamanho_pokemon = poke_geral[5] if len(poke_geral) > 5 and poke_geral[5] else 'N/A'
+                    sr_pokemon = poke_geral[-1] if poke_geral[-1] is not None else 'N/A'
+
+                    st.markdown(
+                        f"📏 **Tamanho:** {tamanho_pokemon} | 🎯 **SR:** {sr_pokemon}"
+                    )
+
+                    st.subheader("Habilidades")
+                    st.markdown(f"- **Principal:** {poke_geral[7]}")
+                    if len(poke_geral) > 8 and poke_geral[8]:
+                        st.markdown(f"- **Secundária:** {poke_geral[8]}")
+                    if len(poke_geral) > 9 and poke_geral[9]:
+                        st.markdown(
+                            f"- **Oculta (Habilidade E):** {poke_geral[9]}"
+                        )
+                    )
+                    
                     # Exibição atualizada: Tamanho e SR
                     tamanho_pokemon = poke_geral[5] if len(poke_geral) > 5 and poke_geral[5] else 'N/A'
                     sr_pokemon = poke_geral[6] if len(poke_geral) > 6 and poke_geral[6] else 'N/A'
