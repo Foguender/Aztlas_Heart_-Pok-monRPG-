@@ -43,7 +43,7 @@ def buscar_detalhes_completos(pokemon_id):
         cursor.execute('SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
         gerais = cursor.fetchone()
 
-        nome_pokemon = gerais[2] if gerais and len(gerais) > 2 else ""
+        nome_pokemon = gerais[2].strip() if gerais and len(gerais) > 2 and gerais[2] else ""
 
         # 2. Descrição (com fallback para problemas de UTF-8)
         try:
@@ -105,7 +105,7 @@ def buscar_detalhes_completos(pokemon_id):
             except Exception:
                 moves_df = pd.DataFrame()
 
-        # 6. Evoluções (NOVO)
+        # 6. Evoluções (Com tratamento LOWER para ignorar maiúsculas/minúsculas)
         try:
             query_evo = """
                 SELECT 
@@ -115,13 +115,16 @@ def buscar_detalhes_completos(pokemon_id):
                     "forma de 3evoluir" AS [Método / Requisito 2], 
                     "3evo" AS [3ª Evolução] 
                 FROM Evolution_chart 
-                WHERE "1evo" = ? OR "2evo" = ? OR "3evo" = ?
+                WHERE LOWER(TRIM("1evo")) = LOWER(?) 
+                   OR LOWER(TRIM("2evo")) = LOWER(?) 
+                   OR LOWER(TRIM("3evo")) = LOWER(?)
             """
             evo_df = pd.read_sql_query(query_evo, conn, params=(nome_pokemon, nome_pokemon, nome_pokemon))
         except Exception:
             evo_df = pd.DataFrame()
 
-        # 7. Localização / Spawns (NOVO)
+        # 7. Localização / Spawns (Com Fallback para o nome com/sem espaço da tabela)
+        loc_df = pd.DataFrame()
         try:
             query_loc = """
                 SELECT 
@@ -131,13 +134,28 @@ def buscar_detalhes_completos(pokemon_id):
                     lp.min_level AS [Nível Mín],
                     lp.max_level AS [Nível Máx],
                     lp.time_of_day AS [Horário]
-                FROM "Locations_Pok mon" lp
+                FROM "Locations_Pokemon" lp
                 JOIN Locations l ON lp.location_id = l.ID
                 WHERE lp.pokemon_id = ?
             """
             loc_df = pd.read_sql_query(query_loc, conn, params=(pokemon_id,))
         except Exception:
-            loc_df = pd.DataFrame()
+            try:
+                query_loc_fallback = """
+                    SELECT 
+                        l.Location AS [Local],
+                        lp.spawn_method AS [Método],
+                        lp.chance_rate AS [Chance],
+                        lp.min_level AS [Nível Mín],
+                        lp.max_level AS [Nível Máx],
+                        lp.time_of_day AS [Horário]
+                    FROM "Locations_Pok mon" lp
+                    JOIN Locations l ON lp.location_id = l.ID
+                    WHERE lp.pokemon_id = ?
+                """
+                loc_df = pd.read_sql_query(query_loc_fallback, conn, params=(pokemon_id,))
+            except Exception:
+                loc_df = pd.DataFrame()
 
     return gerais, descricao, stats, breeding, moves_df, evo_df, loc_df
 
@@ -414,7 +432,7 @@ with abas[0]:
                     else:
                         st.info("Atributos não encontrados para este Pokémon.")
 
-                # NOVA ABA: EVOLUÇÕES
+                # ABA EVOLUÇÕES
                 with aba3:
                     st.subheader("Linhagem de Evolução")
                     if not poke_evo.empty:
@@ -422,13 +440,13 @@ with abas[0]:
                     else:
                         st.info("Este Pokémon não possui linhagem de evolução cadastrada na tabela `Evolution_chart`.")
 
-                # NOVA ABA: LOCALIZAÇÃO & MAPA
+                # ABA LOCALIZAÇÃO & MAPA
                 with aba4:
                     st.subheader("Locais de Aparição em Aztlas")
                     if not poke_loc.empty:
                         st.dataframe(poke_loc, hide_index=True, use_container_width=True)
                     else:
-                        st.info("Nenhum local de spawn selvagem registrado para este Pokémon na tabela `Locations_Pok mon`.")
+                        st.info("Nenhum local de spawn selvagem registrado para este Pokémon nas tabelas de localização.")
 
                     st.markdown("---")
                     st.subheader("🗺️ Mapa da Região")
@@ -482,7 +500,7 @@ with abas[0]:
                     else:
                         st.info("Nenhum golpe cadastrado para este Pokémon.")
 
-        # VIEW: TABELA GERAL (AGORA INDENTADA CORRETAMENTE)
+        # VIEW: TABELA GERAL
         else:
             st.title("PokéDex Completa")
             st.write(
@@ -511,6 +529,7 @@ with abas[0]:
                         indice_linha
                     ]["ID"]
                     st.rerun()
+
 
 # ==============================================================================
 # ABA 2: COMPÊNDIO DE ITENS
