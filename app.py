@@ -105,10 +105,10 @@ def buscar_detalhes_completos(pokemon_id):
             except Exception:
                 moves_df = pd.DataFrame()
 
-        # 6. Evoluções (Busca Exata e Precisa)
+        # 6. Evoluções (Busca Exata com limpeza de espaços nos dois lados)
         try:
-            # Remove espaços extras nas pontas do nome buscado
-            nome_limpo = nome_pokemon.strip()
+            # Garante que o nome pesquisado não tem espaços nas pontas
+            nome_alvo = nome_pokemon.strip()
             
             query_evo = """
                 SELECT 
@@ -118,17 +118,21 @@ def buscar_detalhes_completos(pokemon_id):
                     "forma de 3evoluir" AS [Método / Requisito 2], 
                     "3evo" AS [3ª Evolução] 
                 FROM Evolution_chart 
-                WHERE LOWER(TRIM("1evo")) = LOWER(TRIM(?)) 
-                   OR LOWER(TRIM("2evo")) = LOWER(TRIM(?)) 
-                   OR LOWER(TRIM("3evo")) = LOWER(TRIM(?))
+                WHERE TRIM(LOWER("1evo")) = LOWER(?) 
+                   OR TRIM(LOWER("2evo")) = LOWER(?) 
+                   OR TRIM(LOWER("3evo")) = LOWER(?)
             """
-            evo_df = pd.read_sql_query(query_evo, conn, params=(nome_limpo, nome_limpo, nome_limpo))
+            evo_df = pd.read_sql_query(query_evo, conn, params=(nome_alvo, nome_alvo, nome_alvo))
             
-            # Substitui valores nulos (NULL) por um traço elegante no Streamlit
-            evo_df = evo_df.fillna("-")
-            
+            # Se encontrou a linha, limpa os nulos para exibição
+            if not evo_df.empty:
+                evo_df = evo_df.fillna("-")
+            else:
+                # Caso ainda venha vazio, mostra o diagnóstico exato na tela
+                st.warning(f"⚠️ O SQLite não encontrou correspondência exata para '{nome_alvo}' nas colunas 1evo, 2evo ou 3evo.")
+                
         except Exception as e:
-            st.error(f"⚠️ Erro ao consultar a tabela Evolution_chart: {e}")
+            st.error(f"⚠️ Erro de execução na Evolution_chart: {e}")
             evo_df = pd.DataFrame()
         # 7. Localização / Spawns (COM FALLBACKS DE TABELA E DIAGNÓSTICO)
         loc_df = pd.DataFrame()
