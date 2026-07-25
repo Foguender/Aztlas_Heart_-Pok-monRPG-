@@ -105,8 +105,11 @@ def buscar_detalhes_completos(pokemon_id):
             except Exception:
                 moves_df = pd.DataFrame()
 
-        # 6. Evoluções (Com tratamento LOWER para ignorar maiúsculas/minúsculas)
+        # 6. Evoluções (Busca Exata e Precisa)
         try:
+            # Remove espaços extras nas pontas do nome buscado
+            nome_limpo = nome_pokemon.strip()
+            
             query_evo = """
                 SELECT 
                     "1evo" AS [Forma Inicial], 
@@ -115,14 +118,18 @@ def buscar_detalhes_completos(pokemon_id):
                     "forma de 3evoluir" AS [Método / Requisito 2], 
                     "3evo" AS [3ª Evolução] 
                 FROM Evolution_chart 
-                WHERE LOWER(TRIM("1evo")) = LOWER(?) 
-                   OR LOWER(TRIM("2evo")) = LOWER(?) 
-                   OR LOWER(TRIM("3evo")) = LOWER(?)
+                WHERE LOWER(TRIM("1evo")) = LOWER(TRIM(?)) 
+                   OR LOWER(TRIM("2evo")) = LOWER(TRIM(?)) 
+                   OR LOWER(TRIM("3evo")) = LOWER(TRIM(?))
             """
-            evo_df = pd.read_sql_query(query_evo, conn, params=(nome_pokemon, nome_pokemon, nome_pokemon))
-        except Exception:
+            evo_df = pd.read_sql_query(query_evo, conn, params=(nome_limpo, nome_limpo, nome_limpo))
+            
+            # Substitui valores nulos (NULL) por um traço elegante no Streamlit
+            evo_df = evo_df.fillna("-")
+            
+        except Exception as e:
+            st.error(f"⚠️ Erro ao consultar a tabela Evolution_chart: {e}")
             evo_df = pd.DataFrame()
-
         # 7. Localização / Spawns (COM FALLBACKS DE TABELA E DIAGNÓSTICO)
         loc_df = pd.DataFrame()
         
