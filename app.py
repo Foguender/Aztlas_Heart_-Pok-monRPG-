@@ -190,19 +190,16 @@ with abas[0]:
 
             with aba1:
                 col1, col2 = st.columns([1, 2])
-with col1:
-    # URL base da pasta raw do seu repositório no GitHub
-    github_base_url = "https://raw.githubusercontent.com/seu_usuario/seu_repositorio/main/sprites"
-    
-    # poke_geral[0] pega o 'ID' do Pokémon retornado do seu banco de dados
-    pokemon_id = poke_geral[0] 
-    url_sprite = f"{github_base_url}/{pokemon_id}.png"
+                with col1:
+                    github_base_url = "https://raw.githubusercontent.com/foguender/seu-repositorio/main/sprites"
+                    pokemon_id = poke_geral[0]
+                    url_sprite = f"{github_base_url}/{pokemon_id}.png"
 
-    st.image(
-        url_sprite,
-        caption=poke_geral[2],
-        use_container_width=True,
-    )
+                    st.image(
+                        url_sprite,
+                        caption=poke_geral[2],
+                        use_container_width=True,
+                    )
                 with col2:
                     st.subheader("Informações Biológicas")
                     if poke_desc:
