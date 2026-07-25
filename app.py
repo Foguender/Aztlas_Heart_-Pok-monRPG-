@@ -123,8 +123,7 @@ def buscar_detalhes_completos(pokemon_id):
         except Exception:
             evo_df = pd.DataFrame()
 
-        # 7. Localização / Spawns (Com Fallback para o nome com/sem espaço da tabela)
-        loc_df = pd.DataFrame()
+        # 7. Localização / Spawns (COM DIAGNÓSTICO DE ERRO)
         try:
             query_loc = """
                 SELECT 
@@ -139,23 +138,10 @@ def buscar_detalhes_completos(pokemon_id):
                 WHERE lp.pokemon_id = ?
             """
             loc_df = pd.read_sql_query(query_loc, conn, params=(pokemon_id,))
-        except Exception:
-            try:
-                query_loc_fallback = """
-                    SELECT 
-                        l.Location AS [Local],
-                        lp.spawn_method AS [Método],
-                        lp.chance_rate AS [Chance],
-                        lp.min_level AS [Nível Mín],
-                        lp.max_level AS [Nível Máx],
-                        lp.time_of_day AS [Horário]
-                    FROM "Locations_Pok mon" lp
-                    JOIN Locations l ON lp.location_id = l.ID
-                    WHERE lp.pokemon_id = ?
-                """
-                loc_df = pd.read_sql_query(query_loc_fallback, conn, params=(pokemon_id,))
-            except Exception:
-                loc_df = pd.DataFrame()
+        except Exception as e:
+            # Exibe o erro exato na tela do Streamlit para descobrirmos o motivo
+            st.error(f"Erro SQL ao buscar localização: {e}")
+            loc_df = pd.DataFrame()
 
     return gerais, descricao, stats, breeding, moves_df, evo_df, loc_df
 
