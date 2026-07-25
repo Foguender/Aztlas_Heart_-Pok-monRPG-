@@ -433,7 +433,6 @@ with abas[0]:
                     st.markdown("---")
                     st.subheader("🗺️ Mapa da Região")
                     
-                    # Procura imagens de mapa no diretório
                     pasta_projeto = os.path.dirname(__file__)
                     mapa_encontrado = None
                     for arquivo in os.listdir(pasta_projeto):
@@ -483,36 +482,35 @@ with abas[0]:
                     else:
                         st.info("Nenhum golpe cadastrado para este Pokémon.")
 
-    # VIEW: TABELA GERAL
-    else:
-        st.title("PokéDex Completa")
-        st.write(
-            "Clique em uma linha da tabela para abrir a ficha completa do"
-            " Pokémon."
-        )
+        # VIEW: TABELA GERAL (AGORA INDENTADA CORRETAMENTE)
+        else:
+            st.title("PokéDex Completa")
+            st.write(
+                "Clique em uma linha da tabela para abrir a ficha completa do"
+                " Pokémon."
+            )
 
-        df_tabela = df_filtrado.fillna("-")
-        evento_selecao = st.dataframe(
-            df_tabela,
-            use_container_width=True,
-            hide_index=True,
-            on_select="rerun",
-            selection_mode="single-row",
-        )
+            df_tabela = df_filtrado.fillna("-")
+            evento_selecao = st.dataframe(
+                df_tabela,
+                use_container_width=True,
+                hide_index=True,
+                on_select="rerun",
+                selection_mode="single-row",
+            )
 
-        if (
-            evento_selecao
-            and "selection" in evento_selecao
-            and "rows" in evento_selecao["selection"]
-        ):
-            linhas_selecionadas = evento_selecao["selection"]["rows"]
-            if len(linhas_selecionadas) > 0:
-                indice_linha = linhas_selecionadas[0]
-                st.session_state.id_pokemon_selecionado = df_filtrado.iloc[
-                    indice_linha
-                ]["ID"]
-                st.rerun()
-
+            if (
+                evento_selecao
+                and "selection" in evento_selecao
+                and "rows" in evento_selecao["selection"]
+            ):
+                linhas_selecionadas = evento_selecao["selection"]["rows"]
+                if len(linhas_selecionadas) > 0:
+                    indice_linha = linhas_selecionadas[0]
+                    st.session_state.id_pokemon_selecionado = df_filtrado.iloc[
+                        indice_linha
+                    ]["ID"]
+                    st.rerun()
 
 # ==============================================================================
 # ABA 2: COMPÊNDIO DE ITENS
