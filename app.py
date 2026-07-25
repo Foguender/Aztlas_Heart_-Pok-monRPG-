@@ -34,7 +34,7 @@ def buscar_detalhes_completos(pokemon_id):
     gerais = cursor.fetchone()
 
     cursor.execute(
-        'SELECT "EspÃ©cie", "DescriÃ§Ã£o" FROM descricao_pokedexrpg WHERE "ID" = ?',
+        'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
         (pokemon_id,),
     )
     descricao = cursor.fetchone()
@@ -67,7 +67,7 @@ def buscar_detalhes_completos(pokemon_id):
 def carregar_dados_itens():
     conn = conectar_banco()
     try:
-        query = 'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `DescriÃ§Ã£o`, `PreÃ§o` FROM "Itens"'
+        query = 'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `Descrição`, `PreÃ§o` FROM "Itens"'
         df_itens = pd.read_sql_query(query, conn)
     except Exception:
         try:
@@ -79,8 +79,8 @@ def carregar_dados_itens():
             )
 
     # Renomeia coluna se houver problema de codificação UTF-8
-    if "DescriÃ§Ã£o" in df_itens.columns:
-        df_itens.rename(columns={"DescriÃ§Ã£o": "Descrição"}, inplace=True)
+    if "Descrição" in df_itens.columns:
+        df_itens.rename(columns={"Descrição": "Descrição"}, inplace=True)
     if "PreÃ§o" in df_itens.columns:
         df_itens.rename(columns={"PreÃ§o": "Preço"}, inplace=True)
 
