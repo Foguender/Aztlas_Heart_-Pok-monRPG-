@@ -105,40 +105,33 @@ def buscar_detalhes_completos(pokemon_id):
             except Exception:
                 moves_df = pd.DataFrame()
 
-        # 6. Evoluções (Filtragem robusta via Pandas / Python)
+        # 6. Evoluções (Utilizando os IDs numéricos e JOINs)
         try:
-            nome_alvo = str(nome_pokemon).strip().lower()
-            
-            # Carrega a tabela de evoluções inteira para a memória
             query_evo = """
                 SELECT 
-                    "1evo" AS [Forma Inicial], 
-                    "forma de 2evoluir" AS [Método / Requisito 1], 
-                    "2evo" AS [2ª Evolução], 
-                    "forma de 3evoluir" AS [Método / Requisito 2], 
-                    "3evo" AS [3ª Evolução] 
-                FROM Evolution_chart
+                    p1.Nome AS [Forma Inicial],
+                    e.forma_de_2evoluir AS [Método / Requisito 1],
+                    p2.Nome AS [2ª Evolução],
+                    e.forma_de_3evoluir AS [Método / Requisito 2],
+                    p3.Nome AS [3ª Evolução]
+                FROM Evolution_chart e
+                LEFT JOIN pokemon p1 ON e.pokemon_id_1 = p1.ID
+                LEFT JOIN pokemon p2 ON e.pokemon_id_2 = p2.ID
+                LEFT JOIN pokemon p3 ON e.pokemon_id_3 = p3.ID
+                WHERE e.pokemon_id_1 = ? 
+                   OR e.pokemon_id_2 = ? 
+                   OR e.pokemon_id_3 = ?
             """
-            df_todas_evos = pd.read_sql_query(query_evo, conn)
-            
-            # Faz a busca flexível diretamente pelo Pandas (ignora maiúsculas/minúsculas e limpa espaços)
-            mask = (
-                df_todas_evos['Forma Inicial'].astype(str).str.strip().str.lower() == nome_alvo
-            ) | (
-                df_todas_evos['2ª Evolução'].astype(str).str.strip().str.lower() == nome_alvo
-            ) | (
-                df_todas_evos['3ª Evolução'].astype(str).str.strip().str.lower() == nome_alvo
-            )
-            
-            evo_df = df_todas_evos[mask].copy()
+            # Passa a variável 'pokemon_id' (que é um número inteiro, ex: 1)
+            evo_df = pd.read_sql_query(query_evo, conn, params=(pokemon_id, pokemon_id, pokemon_id))
             
             if not evo_df.empty:
                 evo_df = evo_df.fillna("-")
             else:
-                st.warning(f"⚠️ O Pandas leu toda a tabela Evolution_chart, mas não encontrou o nome '{nome_pokemon}' em nenhuma das 3 colunas evolutivas.")
+                st.info("Este Pokémon não possui linha evolutiva cadastrada.")
                 
         except Exception as e:
-            st.error(f"⚠️ Erro ao processar evoluções: {e}")
+            st.error(f"⚠️ Erro ao consultar a evolução por ID: {e}")
             evo_df = pd.DataFrame()
             
         # 7. Localização / Spawns (COM FALLBACKS DE TABELA E DIAGNÓSTICO)
