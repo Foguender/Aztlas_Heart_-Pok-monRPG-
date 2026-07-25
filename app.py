@@ -105,11 +105,11 @@ def buscar_detalhes_completos(pokemon_id):
             except Exception:
                 moves_df = pd.DataFrame()
 
-        # 6. Evoluções (Busca Exata com limpeza de espaços nos dois lados)
+        # 6. Evoluções (Filtragem robusta via Pandas / Python)
         try:
-            # Garante que o nome pesquisado não tem espaços nas pontas
-            nome_alvo = nome_pokemon.strip()
+            nome_alvo = str(nome_pokemon).strip().lower()
             
+            # Carrega a tabela de evoluções inteira para a memória
             query_evo = """
                 SELECT 
                     "1evo" AS [Forma Inicial], 
@@ -117,23 +117,30 @@ def buscar_detalhes_completos(pokemon_id):
                     "2evo" AS [2ª Evolução], 
                     "forma de 3evoluir" AS [Método / Requisito 2], 
                     "3evo" AS [3ª Evolução] 
-                FROM Evolution_chart 
-                WHERE TRIM(LOWER("1evo")) = LOWER(?) 
-                   OR TRIM(LOWER("2evo")) = LOWER(?) 
-                   OR TRIM(LOWER("3evo")) = LOWER(?)
+                FROM Evolution_chart
             """
-            evo_df = pd.read_sql_query(query_evo, conn, params=(nome_alvo, nome_alvo, nome_alvo))
+            df_todas_evos = pd.read_sql_query(query_evo, conn)
             
-            # Se encontrou a linha, limpa os nulos para exibição
+            # Faz a busca flexível diretamente pelo Pandas (ignora maiúsculas/minúsculas e limpa espaços)
+            mask = (
+                df_todas_evos['Forma Inicial'].astype(str).str.strip().str.lower() == nome_alvo
+            ) | (
+                df_todas_evos['2ª Evolução'].astype(str).str.strip().str.lower() == nome_alvo
+            ) | (
+                df_todas_evos['3ª Evolução'].astype(str).str.strip().str.lower() == nome_alvo
+            )
+            
+            evo_df = df_todas_evos[mask].copy()
+            
             if not evo_df.empty:
                 evo_df = evo_df.fillna("-")
             else:
-                # Caso ainda venha vazio, mostra o diagnóstico exato na tela
-                st.warning(f"⚠️ O SQLite não encontrou correspondência exata para '{nome_alvo}' nas colunas 1evo, 2evo ou 3evo.")
+                st.warning(f"⚠️ O Pandas leu toda a tabela Evolution_chart, mas não encontrou o nome '{nome_pokemon}' em nenhuma das 3 colunas evolutivas.")
                 
         except Exception as e:
-            st.error(f"⚠️ Erro de execução na Evolution_chart: {e}")
+            st.error(f"⚠️ Erro ao processar evoluções: {e}")
             evo_df = pd.DataFrame()
+            
         # 7. Localização / Spawns (COM FALLBACKS DE TABELA E DIAGNÓSTICO)
         loc_df = pd.DataFrame()
         
