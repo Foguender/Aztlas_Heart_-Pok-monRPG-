@@ -59,7 +59,7 @@ def buscar_detalhes_completos(pokemon_id):
         if not descricao:
             try:
                 cursor.execute(
-                    'SELECT "EspÃ©cie", "DescriÃ§Ã£o" FROM descricao_pokedexrpg WHERE'
+                    'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE'
                     ' "ID" = ?',
                     (pokemon_id,),
                 )
@@ -127,7 +127,7 @@ def buscar_detalhes_completos(pokemon_id):
         loc_df = pd.DataFrame()
         
         # Lista de nomes possíveis para a tabela de junção no seu banco
-        tabelas_possiveis = ["Locations_Pok mon", "Locations_Pokemon", "Locations_Pok_mon", "location_pokemon"]
+        tabelas_possiveis = ["Locations_Pok mon", "Locations_Pokémon", "Locations_Pok_mon", "location_pokemon"]
         
         sucesso = False
         for nome_tabela in tabelas_possiveis:
@@ -174,7 +174,7 @@ def carregar_dados_itens():
         except Exception:
             try:
                 query = (
-                    'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `DescriÃ§Ã£o`, `PreÃ§o` FROM'
+                    'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `Descrição`, `PreÃ§o` FROM'
                     ' "Itens"'
                 )
                 df_itens = pd.read_sql_query(query, conn)
@@ -183,8 +183,8 @@ def carregar_dados_itens():
                     columns=["ID", "Tipo", "Nome", "Efeito", "Descrição", "Preço"]
                 )
 
-    if "DescriÃ§Ã£o" in df_itens.columns:
-        df_itens.rename(columns={"DescriÃ§Ã£o": "Descrição"}, inplace=True)
+    if "Descrição" in df_itens.columns:
+        df_itens.rename(columns={"Descrição": "Descrição"}, inplace=True)
     if "PreÃ§o" in df_itens.columns:
         df_itens.rename(columns={"PreÃ§o": "Preço"}, inplace=True)
 
