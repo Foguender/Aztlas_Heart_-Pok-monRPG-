@@ -59,7 +59,6 @@ def carregar_dados_itens():
     try:
         query = 'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `Descrição`, `Preço` FROM "Itens"'
         df_itens = pd.read_sql_query(query, conn)
-        # Converte a coluna Preço para formato numérico com segurança
         df_itens["Preço"] = pd.to_numeric(df_itens["Preço"], errors="coerce")
     except Exception:
         df_itens = pd.DataFrame(
@@ -191,6 +190,7 @@ with abas[0]:
             with aba1:
                 col1, col2 = st.columns([1, 2])
                 with col1:
+                    # Carregamento dinâmico via GitHub Raw
                     github_base_url = "https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites"
                     pokemon_id = poke_geral[0]
                     url_sprite = f"{github_base_url}/{pokemon_id}.png"
@@ -205,19 +205,25 @@ with abas[0]:
                     if poke_desc:
                         st.markdown(f"**Espécie:** {poke_desc[0]}")
                         st.markdown(f"*\"{poke_desc[1]}\"*")
+
                     st.write("---")
                     st.markdown(
                         f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
                     )
+                    
+                    # Exibição atualizada: Tamanho e SR
+                    tamanho_pokemon = poke_geral[5] if len(poke_geral) > 5 and poke_geral[5] else 'N/A'
+                    sr_pokemon = poke_geral[6] if len(poke_geral) > 6 and poke_geral[6] else 'N/A'
+
                     st.markdown(
-                        f"**Altura:** {poke_geral[5]} m | **Peso:** {poke_geral[6]} kg"
+                        f"📏 **Tamanho:** {tamanho_pokemon} | 🎯 **SR:** {sr_pokemon}"
                     )
 
                     st.subheader("Habilidades")
                     st.markdown(f"- **Principal:** {poke_geral[7]}")
-                    if poke_geral[8]:
+                    if len(poke_geral) > 8 and poke_geral[8]:
                         st.markdown(f"- **Secundária:** {poke_geral[8]}")
-                    if poke_geral[9]:
+                    if len(poke_geral) > 9 and poke_geral[9]:
                         st.markdown(
                             f"- **Oculta (Habilidade E):** {poke_geral[9]}"
                         )
@@ -344,11 +350,9 @@ with abas[1]:
                 df_itens_filtrados["Tipo"] == filtro_item_tipo
             ]
 
-        # CALCULADORA INTELIGENTE DE PREÇO (COM CONVERSÃO SEGURA)
         def processar_exibicao_preco(row):
             preco_raw = row["Preço"]
 
-            # Validação e conversão segura para float
             try:
                 if pd.isnull(preco_raw) or preco_raw is None:
                     return "Inestimável", ""
@@ -359,11 +363,9 @@ with abas[1]:
             if preco_original == 0:
                 return "Grátis / Inestimável", ""
 
-            # --- VISÃO DO JOGADOR (PREÇO BASE LIMPO) ---
             if not st.session_state.modo_mestre:
                 return f"₽ {preco_original:,.2f}", ""
 
-            # --- VISÃO EXCLUSIVA DO MESTRE (COM FLUTUAÇÃO) ---
             tipo_item = row["Tipo"]
             mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
             preco_final = preco_original * mod
