@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex Aztlas</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 20px; }
+        h1 { text-align: center; color: #333; }
+        table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #2c3e50; color: white; }
+        tr:hover { background-color: #f1f1f1; cursor: pointer; }
+        .tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
+        a { text-decoration: none; color: #2980b9; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Pokédex da Região de Aztlas</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Dex No.</th>
+                <th>Nome</th>
+                <th>Tipos</th>
+                <th>SR</th>
+                <th>Habilidade 1</th>
+                <th>Habilidade 2</th>
+                <th>Hab. Oculta</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pokemons %}
+            <tr>
+                <td>#{{ p.dex_no or p.ID }}</td>
+                <td><strong>{{ p.Nome }}</strong></td>
+                <td>
+                    <span class="tag">{{ p.tipo1 }}</span>
+                    {% if p.tipo2 %}/ <span class="tag">{{ p.tipo2 }}</span>{% endif %}
+                </td>
+                <td><strong>{{ p.SR or '-' }}</strong></td>
+                <td>{{ p.hab1 or '-' }}</td>
+                <td>{{ p.hab2 or '-' }}</td>
+                <td><i>{{ p.hab_oculta or '-' }}</i></td>
+                <td><a href="/pokemon/{{ p.ID }}">Ver Detalhes</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
