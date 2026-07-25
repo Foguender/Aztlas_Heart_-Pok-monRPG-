@@ -19,7 +19,8 @@ def conectar_banco():
 
 def carregar_dados_pokemon():
     conn = conectar_banco()
-    query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Habilidade 1` FROM pokemon"
+    # Puxando a listagem geral respeitando a estrutura do banco
+    query = "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR` FROM pokemon"
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
@@ -33,19 +34,28 @@ def buscar_detalhes_completos(pokemon_id):
     gerais = cursor.fetchone()
 
     cursor.execute(
-        'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
+        'SELECT "EspÃ©cie", "DescriÃ§Ã£o" FROM descricao_pokedexrpg WHERE "ID" = ?',
         (pokemon_id,),
     )
     descricao = cursor.fetchone()
+    if not descricao:
+        cursor.execute(
+            'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
+            (pokemon_id,),
+        )
+        descricao = cursor.fetchone()
 
-    cursor.execute('SELECT * FROM "Base Stats" WHERE "ID" = ?', (pokemon_id,))
+    cursor.execute('SELECT * FROM "Base Stats" WHERE "id_pokemon" = ?', (pokemon_id,))
     stats = cursor.fetchone()
+    if not stats:
+        cursor.execute('SELECT * FROM "Base Stats" WHERE "ID" = ?', (pokemon_id,))
+        stats = cursor.fetchone()
 
     cursor.execute('SELECT * FROM "Training_Breeding" WHERE "ID" = ?', (pokemon_id,))
     breeding = cursor.fetchone()
 
     try:
-        query_moves = 'SELECT "Nível", "Ataque", "Tipo", "Classe", "Poder", "Acurácia" FROM "pokemon_moves" WHERE "pokemon_id" = ? ORDER BY "Nível" ASC'
+        query_moves = 'SELECT "NÃ­vel", "Ataque", "Tipo", "Classe", "Poder", "AcurÃ¡cia" FROM "pokemon_moves" WHERE "pokemon_id" = ? ORDER BY "NÃ­vel" ASC'
         moves_df = pd.read_sql_query(query_moves, conn, params=(pokemon_id,))
     except Exception:
         moves_df = pd.DataFrame()
@@ -57,13 +67,24 @@ def buscar_detalhes_completos(pokemon_id):
 def carregar_dados_itens():
     conn = conectar_banco()
     try:
-        query = 'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `Descrição`, `Preço` FROM "Itens"'
+        query = 'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `DescriÃ§Ã£o`, `PreÃ§o` FROM "Itens"'
         df_itens = pd.read_sql_query(query, conn)
-        df_itens["Preço"] = pd.to_numeric(df_itens["Preço"], errors="coerce")
     except Exception:
-        df_itens = pd.DataFrame(
-            columns=["ID", "Tipo", "Nome", "Efeito", "Descrição", "Preço"]
-        )
+        try:
+            query = 'SELECT `ID`, `Tipo`, `Nome`, `Efeito`, `Descrição`, `Preço` FROM "Itens"'
+            df_itens = pd.read_sql_query(query, conn)
+        except Exception:
+            df_itens = pd.DataFrame(
+                columns=["ID", "Tipo", "Nome", "Efeito", "Descrição", "Preço"]
+            )
+
+    # Renomeia coluna se houver problema de codificação UTF-8
+    if "DescriÃ§Ã£o" in df_itens.columns:
+        df_itens.rename(columns={"DescriÃ§Ã£o": "Descrição"}, inplace=True)
+    if "PreÃ§o" in df_itens.columns:
+        df_itens.rename(columns={"PreÃ§o": "Preço"}, inplace=True)
+
+    df_itens["Preço"] = pd.to_numeric(df_itens["Preço"], errors="coerce")
     conn.close()
     return df_itens
 
@@ -176,12 +197,15 @@ with abas[0]:
         )
 
         if poke_geral:
-            st.title(f"{poke_geral[2]} {poke_geral[1] if poke_geral[1] else ''}")
+            # poke_geral: 0:ID, 1:Nome, 2:Dex No., 3:Tipo 1, 4:Tipo 2, 5:Tamanho, 6:Habilidade 1, 7:Habildade 2, 8:Habilidade E, 9:SR
+            nome_poke = poke_geral[1]
+            dex_poke = poke_geral[2] if poke_geral[2] else ""
+            st.title(f"{nome_poke} {dex_poke}")
 
             aba1, aba2, aba3, aba4 = st.tabs(
                 [
                     "📋 Dados Gerais",
-                    "📊 Base Stats",
+                    "📊 Atributos & Stats RPG",
                     "🥚 Breeding & Training",
                     "⚔️ Golpes / Moves",
                 ]
@@ -190,14 +214,13 @@ with abas[0]:
             with aba1:
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    # Carregamento dinâmico via GitHub Raw
                     github_base_url = "https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites"
                     pokemon_id = poke_geral[0]
                     url_sprite = f"{github_base_url}/{pokemon_id}.png"
 
                     st.image(
                         url_sprite,
-                        caption=poke_geral[2],
+                        caption=nome_poke,
                         use_container_width=True,
                     )
                 with col2:
@@ -211,71 +234,51 @@ with abas[0]:
                         f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:** {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
                     )
                     
-                    # 🎯 Tamanho na posição 5 e SR garantido como o ÚLTIMO item da tabela [-1]
-                    tamanho_pokemon = poke_geral[5] if len(poke_geral) > 5 and poke_geral[5] else 'N/A'
-                    sr_pokemon = poke_geral[-1] if poke_geral[-1] is not None else 'N/A'
+                    # Tamanho (Índice 5) e SR (Último Índice [-1])
+                    tamanho_val = poke_geral[5] if poke_geral[5] else 'N/A'
+                    sr_val = poke_geral[-1] if poke_geral[-1] is not None else 'N/A'
 
                     st.markdown(
-                        f"📏 **Tamanho:** {tamanho_pokemon} | 🎯 **SR:** {sr_pokemon}"
+                        f"📏 **Tamanho:** {tamanho_val} | 🎯 **SR:** {sr_val}"
                     )
 
                     st.subheader("Habilidades")
-                    st.markdown(f"- **Principal:** {poke_geral[7]}")
+                    st.markdown(f"- **Principal:** {poke_geral[6]}")
+                    if len(poke_geral) > 7 and poke_geral[7]:
+                        st.markdown(f"- **Secundária:** {poke_geral[7]}")
                     if len(poke_geral) > 8 and poke_geral[8]:
-                        st.markdown(f"- **Secundária:** {poke_geral[8]}")
-                    if len(poke_geral) > 9 and poke_geral[9]:
-                        st.markdown(
-                            f"- **Oculta (Habilidade E):** {poke_geral[9]}"
-                        )
-                    )
-                    
-                    # Exibição atualizada: Tamanho e SR
-                    tamanho_pokemon = poke_geral[5] if len(poke_geral) > 5 and poke_geral[5] else 'N/A'
-                    sr_pokemon = poke_geral[6] if len(poke_geral) > 6 and poke_geral[6] else 'N/A'
-
-                    st.markdown(
-                        f"📏 **Tamanho:** {tamanho_pokemon} | 🎯 **SR:** {sr_pokemon}"
-                    )
-
-                    st.subheader("Habilidades")
-                    st.markdown(f"- **Principal:** {poke_geral[7]}")
-                    if len(poke_geral) > 8 and poke_geral[8]:
-                        st.markdown(f"- **Secundária:** {poke_geral[8]}")
-                    if len(poke_geral) > 9 and poke_geral[9]:
-                        st.markdown(
-                            f"- **Oculta (Habilidade E):** {poke_geral[9]}"
-                        )
+                        st.markdown(f"- **Oculta (Habilidade E):** {poke_geral[8]}")
 
             with aba2:
-                st.subheader("Estatísticas Base")
+                st.subheader("Atributos de RPG (Sistema D20)")
                 if poke_stats:
-                    stats_dados = {
-                        "Status": [
-                            "HP",
-                            "Ataque",
-                            "Defesa",
-                            "Sp. Atk",
-                            "Sp. Def",
-                            "Velocidade",
-                        ],
-                        "Valor": [
-                            poke_stats[2],
-                            poke_stats[3],
-                            poke_stats[4],
-                            poke_stats[5],
-                            poke_stats[6],
-                            poke_stats[7],
-                        ],
-                    }
-                    st.dataframe(
-                        pd.DataFrame(stats_dados),
-                        hide_index=True,
-                        use_container_width=True,
-                    )
+                    # Adaptado para a estrutura das colunas do seu banco:
+                    # HP, FOR, DES, CON, INT, SAB, CAR, CA, Hit Dice...
+                    col_s1, col_s2, col_s3 = st.columns(3)
+                    with col_s1:
+                        st.metric("HP", poke_stats[2] if len(poke_stats) > 2 else "N/A")
+                        st.metric("FOR", poke_stats[3] if len(poke_stats) > 3 else "N/A")
+                        st.metric("DES", poke_stats[4] if len(poke_stats) > 4 else "N/A")
+                    with col_s2:
+                        st.metric("CON", poke_stats[5] if len(poke_stats) > 5 else "N/A")
+                        st.metric("INT", poke_stats[6] if len(poke_stats) > 6 else "N/A")
+                        st.metric("SAB", poke_stats[7] if len(poke_stats) > 7 else "N/A")
+                    with col_s3:
+                        st.metric("CAR", poke_stats[8] if len(poke_stats) > 8 else "N/A")
+                        if len(poke_stats) > 12:
+                            st.metric("Classe de Armadura (CA)", poke_stats[12])
+                        if len(poke_stats) > 13:
+                            st.metric("Hit Dice", poke_stats[13])
+
+                    st.write("---")
+                    if len(poke_stats) > 9 and poke_stats[9]:
+                        st.markdown(f"**Proficiência em Atributos:** {poke_stats[9]}")
+                    if len(poke_stats) > 10 and poke_stats[10]:
+                        st.markdown(f"**Proficiência em Perícias:** {poke_stats[10]}")
+                    if len(poke_stats) > 11 and poke_stats[11]:
+                        st.markdown(f"**Percepções:** {poke_stats[11]}")
                 else:
-                    st.info(
-                        "Dados de Base Stats não encontrados para este Pokémon."
-                    )
+                    st.info("Dados de Atributos/Base Stats não encontrados para este Pokémon.")
 
             with aba3:
                 st.subheader("Dados de Cruzamento e Treinamento")
@@ -287,26 +290,18 @@ with abas[0]:
                     )
                     st.markdown(f"**Taxa de Gênero:** {poke_breed[6]}")
                 else:
-                    st.info(
-                        "Dados de Breeding/Training não encontrados para este Pokémon."
-                    )
+                    st.info("Dados de Breeding/Training não encontrados para este Pokémon.")
 
             with aba4:
                 st.subheader("Lista de Golpes Aprendidos")
                 if not poke_moves.empty:
-                    st.dataframe(
-                        poke_moves, hide_index=True, use_container_width=True
-                    )
+                    st.dataframe(poke_moves, hide_index=True, use_container_width=True)
                 else:
-                    st.info(
-                        "Nenhum golpe encontrado ou tabela de golpes não configurada."
-                    )
+                    st.info("Nenhum golpe encontrado ou tabela de golpes não configurada.")
 
     else:
         st.title("PokéDex Completa")
-        st.write(
-            "Selecione a caixinha ao lado esquerdo de qualquer Pokémon para abrir sua ficha detalhada."
-        )
+        st.write("Selecione uma linha abaixo para ver a ficha completa do Pokémon.")
 
         df_tabela = df_filtrado.fillna("-")
         evento_selecao = st.dataframe(
@@ -325,9 +320,7 @@ with abas[0]:
             linhas_selecionadas = evento_selecao["selection"]["rows"]
             if len(linhas_selecionadas) > 0:
                 indice_linha = linhas_selecionadas[0]
-                st.session_state.id_pokemon_selecionado = df_filtrado.iloc[
-                    indice_linha
-                ]["ID"]
+                st.session_state.id_pokemon_selecionado = df_filtrado.iloc[indice_linha]["ID"]
                 st.rerun()
 
 
@@ -336,9 +329,7 @@ with abas[0]:
 # ==============================================================================
 with abas[1]:
     st.title("🎒 Compêndio de Itens & Equipamentos")
-    st.markdown(
-        "Consulte os consumíveis, esferas de captura, bagas e itens da região de Aztlas."
-    )
+    st.markdown("Consulte os consumíveis, esferas de captura, bagas e itens da região de Aztlas.")
 
     df_itens = carregar_dados_itens()
 
@@ -350,23 +341,17 @@ with abas[1]:
 
         filtro_item_nome = st.sidebar.text_input("Buscar Item por Nome:", "")
         tipos_itens = ["Todos"] + sorted(list(df_itens["Tipo"].dropna().unique()))
-        filtro_item_tipo = st.sidebar.selectbox(
-            "Filtrar por Categoria/Tipo:", tipos_itens
-        )
+        filtro_item_tipo = st.sidebar.selectbox("Filtrar por Categoria/Tipo:", tipos_itens)
 
         df_itens_filtrados = df_itens.copy()
 
         if filtro_item_nome:
             df_itens_filtrados = df_itens_filtrados[
-                df_itens_filtrados["Nome"].str.contains(
-                    filtro_item_nome, case=False, na=False
-                )
+                df_itens_filtrados["Nome"].str.contains(filtro_item_nome, case=False, na=False)
             ]
 
         if filtro_item_tipo != "Todos":
-            df_itens_filtrados = df_itens_filtrados[
-                df_itens_filtrados["Tipo"] == filtro_item_tipo
-            ]
+            df_itens_filtrados = df_itens_filtrados[df_itens_filtrados["Tipo"] == filtro_item_tipo]
 
         def processar_exibicao_preco(row):
             preco_raw = row["Preço"]
@@ -423,10 +408,7 @@ with abas[1]:
                         if st.session_state.modo_mestre and status_preco:
                             st.caption(f"Status da Flutuação: {status_preco}")
 
-                        if (
-                            pd.notnull(item["Efeito"])
-                            and str(item["Efeito"]).strip() != ""
-                        ):
+                        if pd.notnull(item["Efeito"]) and str(item["Efeito"]).strip() != "":
                             st.info(f"⚡ **Efeito:** {item['Efeito']}")
 
                     with col_e2:
@@ -458,13 +440,9 @@ with abas[1]:
 if st.session_state.modo_mestre:
     with abas[2]:
         st.title("🧙‍♂️ Escudo do Mestre")
-        st.markdown(
-            "Painel de gerenciamento do ecossistema e economia de Aztlas."
-        )
+        st.markdown("Painel de gerenciamento do ecossistema e economia de Aztlas.")
 
-        sub_mercado, sub_regras = st.tabs(
-            ["🎲 Algoritmo de Mercado", "📜 Regras Rápidas"]
-        )
+        sub_mercado, sub_regras = st.tabs(["🎲 Algoritmo de Mercado", "📜 Regras Rápidas"])
 
         df_itens = carregar_dados_itens()
         categorias_existentes = (
@@ -480,9 +458,7 @@ if st.session_state.modo_mestre:
 
             with col_btn1:
                 if st.button("🎲 Girar Mercado (Simular Novo Dia)", type="primary"):
-                    st.session_state.modificadores_preco = (
-                        gerar_flutuacao_automatica(categorias_existentes)
-                    )
+                    st.session_state.modificadores_preco = gerar_flutuacao_automatica(categorias_existentes)
                     st.success("🎉 Mercado atualizado! Novos percentuais gerados.")
                     st.rerun()
 
@@ -498,9 +474,7 @@ if st.session_state.modo_mestre:
             st.subheader("📊 Flutuações Vigentes no Momento")
 
             if not st.session_state.modificadores_preco:
-                st.caption(
-                    "Nenhuma flutuação gerada ainda hoje. Clique em 'Girar Mercado' para simular."
-                )
+                st.caption("Nenhuma flutuação gerada ainda hoje. Clique em 'Girar Mercado' para simular.")
             else:
                 for cat in categorias_existentes:
                     mod = st.session_state.modificadores_preco.get(cat, 1.0)
@@ -516,9 +490,7 @@ if st.session_state.modo_mestre:
         with sub_regras:
             st.subheader("📜 Regras Rápidas & Tabelas de Apoio")
 
-            caminho_regras = os.path.join(
-                os.path.dirname(__file__), "regras_mestre.md"
-            )
+            caminho_regras = os.path.join(os.path.dirname(__file__), "regras_mestre.md")
 
             if os.path.exists(caminho_regras):
                 with open(caminho_regras, "r", encoding="utf-8") as f:
@@ -526,9 +498,7 @@ if st.session_state.modo_mestre:
 
                 st.markdown(conteudo_regras)
             else:
-                st.info(
-                    "📄 O arquivo `regras_mestre.md` não foi encontrado na pasta do projeto."
-                )
+                st.info("📄 O arquivo `regras_mestre.md` não foi encontrado na pasta do projeto.")
                 st.caption(
                     "Crie o arquivo `regras_mestre.md` na mesma pasta do `app.py` para exibir suas regras e tabelas aqui."
                 )
