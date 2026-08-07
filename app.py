@@ -11,6 +11,68 @@ st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide"
 
 
 # -----------------------------------------------------------------------------
+# ESTILIZAÇÃO COMPLEMENTAR (ESTILO POKÉMONDB)
+# -----------------------------------------------------------------------------
+def criar_badge_tipo(tipo):
+    if not tipo or pd.isna(tipo) or str(tipo).strip() in ["-", "", "None"]:
+        return ""
+
+    cores_tipos = {
+        "Normal": "#A8A77A",
+        "Fogo": "#EE8130",
+        "Água": "#6390F0",
+        "Grama": "#7AC74C",
+        "Elétrico": "#F7D02C",
+        "Eletrico": "#F7D02C",
+        "Gelo": "#96D9D6",
+        "Lutador": "#C22E28",
+        "Venenoso": "#A33EA0",
+        "Veneno": "#A33EA0",
+        "Terra": "#E2BF65",
+        "Voador": "#A98FF3",
+        "Psíquico": "#F95587",
+        "Psiquico": "#F95587",
+        "Inseto": "#A6B91A",
+        "Pedra": "#B6A136",
+        "Fantasma": "#735797",
+        "Dragão": "#6F35FC",
+        "Dragon": "#6F35FC",
+        "Sombrio": "#705848",
+        "Metal": "#B7B7CE",
+        "Aço": "#B7B7CE",
+        "Fada": "#D685AD",
+    }
+
+    cor = cores_tipos.get(str(tipo).capitalize(), "#777777")
+    return f"""<span style="
+        background-color: {cor};
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 11px;
+        text-transform: uppercase;
+        display: inline-block;
+        min-width: 65px;
+        text-align: center;">
+        {tipo}
+    </span>"""
+
+
+def criar_badge_categoria(categoria):
+    if not categoria or pd.isna(categoria):
+        return "—"
+
+    cat_str = str(categoria).lower()
+    if "fís" in cat_str or "fis" in cat_str or "physical" in cat_str:
+        return '🔴 <span style="color:#e05244; font-weight:bold;">Físico</span>'
+    elif "esp" in cat_str or "special" in cat_str:
+        return '🔵 <span style="color:#4a90e2; font-weight:bold;">Especial</span>'
+    else:
+        return '⚪ <span style="color:#8e8e93; font-weight:bold;">Status</span>'
+
+
+# -----------------------------------------------------------------------------
 # 1. BANCO DE DADOS & QUERIES
 # -----------------------------------------------------------------------------
 def obter_caminho_banco():
@@ -321,10 +383,10 @@ with abas[0]:
                             st.markdown(f"**Espécie:** {poke_desc[0]}")
                             st.markdown(f"*\"{poke_desc[1]}\"*")
                         st.write("---")
-                        st.markdown(
-                            f"**Tipo 1:** {poke_geral[3]} | **Tipo 2:**"
-                            f" {poke_geral[4] if poke_geral[4] else 'Nenhum'}"
-                        )
+                        
+                        t1 = criar_badge_tipo(poke_geral[3])
+                        t2 = criar_badge_tipo(poke_geral[4]) if poke_geral[4] else ""
+                        st.markdown(f"**Tipos:** {t1} {t2}", unsafe_allow_html=True)
                         st.markdown(
                             f"📏 **Tamanho:** {poke_geral[5]} | 🎯 **SR:**"
                             f" {poke_geral[6]}"
@@ -374,64 +436,73 @@ with abas[0]:
                         )
 
                 with aba6:
-                    st.subheader("⚔️ Golpes e Habilidades Aprendidas")
+                    st.subheader("⚔️ Movimentos e Golpes Aprendidos")
 
                     tab_learn, tab_tm, tab_egg, tab_teacher = st.tabs([
-                        "📜 Learnset (Nível)",
+                        "📜 Por Nível",
                         "💿 TMs & HMs",
                         "🥚 Egg Moves",
                         "👨‍🏫 Teacher Moves",
                     ])
 
+                    def renderizar_tabela_pokemondb(df_golpes, coluna_nivel=None):
+                        if df_golpes.empty:
+                            st.info("Nenhum movimento registrado nesta categoria.")
+                            return
+
+                        df = df_golpes.copy()
+                        df_exibicao = pd.DataFrame()
+
+                        if coluna_nivel and coluna_nivel in df.columns:
+                            df_exibicao["Nível"] = df[coluna_nivel].apply(
+                                lambda x: f"Lvl {x}" if pd.notnull(x) else "1"
+                            )
+
+                        if "Nome" in df.columns:
+                            df_exibicao["Golpe"] = df["Nome"].apply(lambda x: f"<b>{x}</b>")
+                        elif "Move" in df.columns:
+                            df_exibicao["Golpe"] = df["Move"].apply(lambda x: f"<b>{x}</b>")
+
+                        if "Tipo" in df.columns:
+                            df_exibicao["Tipo"] = df["Tipo"].apply(criar_badge_tipo)
+
+                        if "Categoria" in df.columns:
+                            df_exibicao["Classe"] = df["Categoria"].apply(criar_badge_categoria)
+
+                        if "Poder" in df.columns:
+                            df_exibicao["Poder"] = df["Poder"].apply(
+                                lambda x: str(x) if pd.notnull(x) and str(x) != "0" else "—"
+                            )
+
+                        if "Precisao" in df.columns:
+                            df_exibicao["Precisão"] = df["Precisao"].apply(
+                                lambda x: f"{x}%" if pd.notnull(x) else "—"
+                            )
+                        elif "Accuracy" in df.columns:
+                            df_exibicao["Precisão"] = df["Accuracy"].apply(
+                                lambda x: f"{x}%" if pd.notnull(x) else "—"
+                            )
+
+                        if "PP" in df.columns:
+                            df_exibicao["PP"] = df["PP"]
+
+                        if "Efeito" in df.columns:
+                            df_exibicao["Efeito / Descrição"] = df["Efeito"]
+
+                        html_table = df_exibicao.to_html(escape=False, index=False)
+                        st.write(html_table, unsafe_allow_html=True)
+
                     with tab_learn:
-                        if not golpes["learnset"].empty:
-                            st.dataframe(
-                                golpes["learnset"],
-                                use_container_width=True,
-                                hide_index=True,
-                            )
-                        else:
-                            st.info(
-                                "Nenhum golpe cadastrado na tabela"
-                                " Learnset_pokemon."
-                            )
+                        renderizar_tabela_pokemondb(golpes["learnset"], coluna_nivel="Nivel")
 
                     with tab_tm:
-                        if not golpes["tm"].empty:
-                            st.dataframe(
-                                golpes["tm"],
-                                use_container_width=True,
-                                hide_index=True,
-                            )
-                        else:
-                            st.info(
-                                "Nenhum golpe cadastrado na tabela Tm_pokémon."
-                            )
+                        renderizar_tabela_pokemondb(golpes["tm"])
 
                     with tab_egg:
-                        if not golpes["egg"].empty:
-                            st.dataframe(
-                                golpes["egg"],
-                                use_container_width=True,
-                                hide_index=True,
-                            )
-                        else:
-                            st.info(
-                                "Nenhum golpe cadastrado na tabela Egg_Moves."
-                            )
+                        renderizar_tabela_pokemondb(golpes["egg"])
 
                     with tab_teacher:
-                        if not golpes["teacher"].empty:
-                            st.dataframe(
-                                golpes["teacher"],
-                                use_container_width=True,
-                                hide_index=True,
-                            )
-                        else:
-                            st.info(
-                                "Nenhum golpe cadastrado na tabela"
-                                " Teacher_Moves."
-                            )
+                        renderizar_tabela_pokemondb(golpes["teacher"])
 
         else:
             st.title("PokéDex Completa")
@@ -459,9 +530,7 @@ with abas[0]:
 # ==============================================================================
 with abas[1]:
     st.title("✨ Compêndio de Habilidades (Abilities)")
-    st.markdown(
-        "Consulte os efeitos passivos e mecânicas das habilidades Pokémon."
-    )
+    st.markdown("Consulte os efeitos passivos e mecânicas das habilidades Pokémon.")
 
     df_hab = carregar_dados_habilidades()
 
@@ -478,9 +547,9 @@ with abas[1]:
         st.dataframe(
             df_hab.fillna("-"), use_container_width=True, hide_index=True
         )
-        
+
 # ==============================================================================
-# ABA 2: COMPÊNDIO DE ITENS
+# ABA 3: COMPÊNDIO DE ITENS
 # ==============================================================================
 with abas[2]:
     st.title("🎒 Compêndio de Itens & Equipamentos")
@@ -607,7 +676,7 @@ with abas[2]:
 
 
 # ==============================================================================
-# ABA 3: ESCUDO DO MESTRE
+# ABA 4: ESCUDO DO MESTRE
 # ==============================================================================
 if st.session_state.modo_mestre:
     with abas[3]:
