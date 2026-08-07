@@ -80,7 +80,7 @@ def buscar_detalhes_completos(pokemon_id):
 
         # 4. Breeding & Training
         cursor.execute(
-            'SELECT * FROM "Training_Breeding" WHERE "ID" = ?', (pokemon_id,)
+            'SELECT * FROM "Tr_Br" WHERE "ID" = ?', (pokemon_id,)
         )
         breeding = cursor.fetchone()
 
