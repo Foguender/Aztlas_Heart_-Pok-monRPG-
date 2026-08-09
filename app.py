@@ -38,8 +38,8 @@ def criar_badge_tipo(tipo):
         "Dragão": "#6F35FC",
         "Dragon": "#6F35FC",
         "Sombrio": "#775544",
-        "Metal": "#B7B7CE",
-        "Aço": "#B7B7CE",
+        "Metal": "#6CC644",
+        "Aço": "#6CC644",
         "Fada": "#D685AD",
     }
 
