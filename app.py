@@ -93,13 +93,13 @@ def carregar_dados_pokemon():
                 "Tamanho",
                 "SR",
                 "Habilidade 1",
-                "Habilidade 2",
                 "Habilidade E",
             ]
         )
 
     with sqlite3.connect(caminho_banco) as conn:
-        query = """SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade 2`, `Habilidade E` FROM pokemon"""
+        # Removido `Habilidade 2` para evitar o erro de coluna inexistente
+        query = """SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade E` FROM pokemon"""
         df = pd.read_sql_query(query, conn)
     return df
 
@@ -376,7 +376,7 @@ with abas[0]:
                         st.image(
                             url_sprite,
                             caption=poke_geral[2],
-                            use_container_width=True,
+                            width="stretch",
                         )
                     with col2:
                         st.subheader("Informações Biológicas")
@@ -395,12 +395,9 @@ with abas[0]:
                         st.write("---")
                         st.subheader("✨ Habilidades")
                         hab1 = poke_geral[7] if len(poke_geral) > 7 and poke_geral[7] else "Nenhuma"
-                        hab2 = poke_geral[8] if len(poke_geral) > 8 and poke_geral[8] else None
-                        hab_e = poke_geral[9] if len(poke_geral) > 9 and poke_geral[9] else None
+                        hab_e = poke_geral[8] if len(poke_geral) > 8 and poke_geral[8] else None
 
                         st.markdown(f"• **Habilidade 1:** `{hab1}`")
-                        if hab2 and str(hab2).strip() not in ["-", "", "None"]:
-                            st.markdown(f"• **Habilidade 2:** `{hab2}`")
                         if hab_e and str(hab_e).strip() not in ["-", "", "None"]:
                             st.markdown(f"• **Habilidade Oculta (E):** `{hab_e}`")
 
@@ -426,7 +423,7 @@ with abas[0]:
                     if not poke_evo.empty:
                         st.dataframe(
                             poke_evo,
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True,
                         )
                     else:
@@ -437,7 +434,7 @@ with abas[0]:
                     if not poke_loc.empty:
                         st.dataframe(
                             poke_loc,
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True,
                         )
                     else:
@@ -457,7 +454,7 @@ with abas[0]:
 
                     tab_learn, tab_tm, tab_egg, tab_teacher = st.tabs([
                         "📜 Por Nível",
-                        "💿 TMs & HMs",
+                        "CDs / TMs & HMs",
                         "🥚 Egg Moves",
                         "👨‍🏫 Teacher Moves",
                     ])
@@ -525,7 +522,7 @@ with abas[0]:
             st.title("PokéDex Completa")
             evento_selecao = st.dataframe(
                 df_filtrado.fillna("-"),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 on_select="rerun",
                 selection_mode="single-row",
@@ -562,7 +559,7 @@ with abas[1]:
             ]
 
         st.dataframe(
-            df_hab.fillna("-"), use_container_width=True, hide_index=True
+            df_hab.fillna("-"), width="stretch", hide_index=True
         )
 
 # ==============================================================================
@@ -689,7 +686,7 @@ with abas[2]:
                 )
 
             df_exibicao = df_exibicao.fillna("-")
-            st.dataframe(df_exibicao, use_container_width=True, hide_index=True)
+            st.dataframe(df_exibicao, width="stretch", hide_index=True)
 
 
 # ==============================================================================
