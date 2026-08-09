@@ -18,7 +18,7 @@ def criar_badge_tipo(tipo):
         return ""
 
     cores_tipos = {
-        "Normal": "#6CC644",
+        "Normal": "#AAAA99",
         "Fogo": "#FF4422",
         "Água": "#3399FF",
         "Grama": "#6CC644",
@@ -84,12 +84,12 @@ def carregar_dados_pokemon():
     caminho_banco = obter_caminho_banco()
     if not os.path.exists(caminho_banco):
         return pd.DataFrame(
-            columns=["ID", "Dex No.", "Nome", "Tipo 1", "Tipo 2", "Tamanho", "SR"]
+            columns=["ID", "Dex No.", "Nome", "Tipo 1", "Tipo 2", "Tamanho", "SR", "Habilidade 1" "Habilidade 2", "Habilidade E"]
         )
 
     with sqlite3.connect(caminho_banco) as conn:
         query = (
-            "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`"
+            "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1` `Habilidade 2`, `Habilidade E`
             " FROM pokemon"
         )
         df = pd.read_sql_query(query, conn)
@@ -122,7 +122,7 @@ def buscar_detalhes_completos(pokemon_id):
         except Exception:
             try:
                 cursor.execute(
-                    'SELECT "EspÃ©cie", "DescriÃ§Ã£o" FROM descricao_pokedexrpg WHERE "ID" = ?',
+                    'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
                     (pokemon_id,),
                 )
                 descricao = cursor.fetchone()
