@@ -21,7 +21,7 @@ def criar_badge_tipo(tipo):
         "Normal": "#AAAA99",
         "Fogo": "#FF4422",
         "Água": "#3399FF",
-        "Grama": "#77CC55",
+        "Grama": "#6CC644",
         "Elétrico": "#F7D02C",
         "Eletrico": "#FfCC33",
         "Gelo": "#96D9D6",
