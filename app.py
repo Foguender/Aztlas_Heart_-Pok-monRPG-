@@ -73,13 +73,8 @@ def criar_badge_categoria(categoria):
 
 
 # -----------------------------------------------------------------------------
-# 1. BANCO DE DADOS & QUERIES
+# 1. BANCO DE DADOS & QUERIES (Ajuste na Query do Pokémon)
 # -----------------------------------------------------------------------------
-def obter_caminho_banco():
-    caminho_atual = os.path.dirname(__file__)
-    return os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
-
-
 def carregar_dados_pokemon():
     caminho_banco = obter_caminho_banco()
     if not os.path.exists(caminho_banco):
@@ -93,13 +88,14 @@ def carregar_dados_pokemon():
                 "Tamanho",
                 "SR",
                 "Habilidade 1",
+                "Habilidade 2",  # Coluna incluída
                 "Habilidade E",
             ]
         )
 
     with sqlite3.connect(caminho_banco) as conn:
-        # Removido `Habilidade 2` para evitar o erro de coluna inexistente
-        query = """SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade E` FROM pokemon"""
+        # Adicionado `Habilidade 2` na busca SQL
+        query = """SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade 2`, `Habilidade E` FROM pokemon"""
         df = pd.read_sql_query(query, conn)
     return df
 
@@ -394,12 +390,24 @@ with abas[0]:
                         
                         st.write("---")
                         st.subheader("✨ Habilidades")
+                        
+                        # Mapeamento dos índices dos dados retornados do banco:
+                        # poke_geral[7] = Habilidade 1
+                        # poke_geral[8] = Habilidade 2
+                        # poke_geral[9] = Habilidade Oculta (E)
                         hab1 = poke_geral[7] if len(poke_geral) > 7 and poke_geral[7] else "Nenhuma"
-                        hab_e = poke_geral[8] if len(poke_geral) > 8 and poke_geral[8] else None
+                        hab2 = poke_geral[8] if len(poke_geral) > 8 and poke_geral[8] else None
+                        hab_e = poke_geral[9] if len(poke_geral) > 9 and poke_geral[9] else None
 
                         st.markdown(f"• **Habilidade 1:** `{hab1}`")
-                        if hab_e and str(hab_e).strip() not in ["-", "", "None"]:
-                            st.markdown(f"• **Habilidade Oculta (E):** `{hab_e}`")
+                        
+                        # Exibe a Habilidade 2 apenas se ela existir no registro
+                        if hab2 and str(hab2).strip() not in ["-", "", "None", "nan"]:
+                            st.markdown(f"• **Habilidade 2:** `{hab2}`")
+                            
+                        # Exibe a Habilidade Oculta apenas se ela existir no registro
+                        if hab_e and str(hab_e).strip() not in ["-", "", "None", "nan"]:
+                            st.markdown(f"• **Habilidade Oculta (Escondida):** `{hab_e}`")
 
                 with aba2:
                     st.subheader("Atributos de RPG (Sistema D20)")
