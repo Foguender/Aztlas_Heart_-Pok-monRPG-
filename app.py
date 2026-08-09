@@ -18,7 +18,7 @@ def criar_badge_tipo(tipo):
         return ""
 
     cores_tipos = {
-        "Normal": "#AAAA99",
+        "Normal": "#6CC644",
         "Fogo": "#FF4422",
         "Água": "#3399FF",
         "Grama": "#6CC644",
