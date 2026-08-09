@@ -75,7 +75,6 @@ def criar_badge_categoria(categoria):
 # -----------------------------------------------------------------------------
 # 1. BANCO DE DADOS & QUERIES
 # -----------------------------------------------------------------------------
-# Definida ANTES de carregar_dados_pokemon para evitar o NameError
 def obter_caminho_banco():
     caminho_atual = os.path.dirname(__file__)
     return os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
@@ -84,23 +83,11 @@ def obter_caminho_banco():
 def carregar_dados_pokemon():
     caminho_banco = obter_caminho_banco()
     if not os.path.exists(caminho_banco):
-        return pd.DataFrame(
-            columns=[
-                "ID",
-                "Dex No.",
-                "Nome",
-                "Tipo 1",
-                "Tipo 2",
-                "Tamanho",
-                "SR",
-                "Habilidade 1",
-                "Habilidade 2",
-                "Habilidade E",
-            ]
-        )
+        return pd.DataFrame()
 
     with sqlite3.connect(caminho_banco) as conn:
-        query = """SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade 2`, `Habilidade E` FROM pokemon"""
+        # SELECT * evita quebras por nomes de colunas diferentes
+        query = """SELECT * FROM pokemon"""
         df = pd.read_sql_query(query, conn)
     return df
 
@@ -115,14 +102,13 @@ def carregar_tabela_segura(conn, query, params=()):
 def buscar_detalhes_completos(pokemon_id):
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
-        cursor = conn.cursor()
-
-        # 1. Dados Gerais
-        cursor.execute('SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
-        gerais = cursor.fetchone()
+        # Fetching as dict/DataFrame para garantir acesso dinâmico por coluna
+        df_geral = carregar_tabela_segura(conn, 'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
+        gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
         # 2. Descrição
         try:
+            cursor = conn.cursor()
             cursor.execute(
                 'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
                 (pokemon_id,),
@@ -132,6 +118,7 @@ def buscar_detalhes_completos(pokemon_id):
             descricao = ("Sem espécie", "Sem descrição disponível.")
 
         # 3. Base Stats
+        cursor = conn.cursor()
         cursor.execute(
             'SELECT * FROM "Base Stats" WHERE "id_pokemon" = ?', (pokemon_id,)
         )
@@ -148,7 +135,7 @@ def buscar_detalhes_completos(pokemon_id):
         )
         breeding = cursor.fetchone()
 
-        # 5. Consultas Específicas de Golpes (Learnset, TM, Egg, Teacher)
+        # 5. Golpes
         learnset_df = carregar_tabela_segura(
             conn,
             'SELECT * FROM "Learnset_pokemon" WHERE "pokemon_id" = ? OR "ID" = ?',
@@ -170,7 +157,6 @@ def buscar_detalhes_completos(pokemon_id):
             (pokemon_id, pokemon_id),
         )
 
-        # Fallback genérico para a tabela antiga caso as específicas estejam vazias
         if learnset_df.empty and tm_df.empty and egg_df.empty and teacher_df.empty:
             learnset_df = carregar_tabela_segura(
                 conn,
@@ -318,28 +304,25 @@ with abas[0]:
         st.sidebar.header("🔍 Filtros da Pokédex")
         filtro_nome = st.sidebar.text_input("Buscar Pokémon por Nome:", "")
 
-        tipos_disponiveis = sorted(
-            list(
-                set(df_pokemon["Tipo 1"].dropna().unique())
-                | set(df_pokemon["Tipo 2"].dropna().unique())
-            )
-        )
+        col_t1 = df_pokemon["Tipo 1"].dropna().unique() if "Tipo 1" in df_pokemon.columns else []
+        col_t2 = df_pokemon["Tipo 2"].dropna().unique() if "Tipo 2" in df_pokemon.columns else []
+        tipos_disponiveis = sorted(list(set(col_t1) | set(col_t2)))
+        
         filtro_tipo = st.sidebar.selectbox(
             "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
         )
 
         df_filtrado = df_pokemon.copy()
 
-        if filtro_nome:
+        if filtro_nome and "Nome" in df_filtrado.columns:
             df_filtrado = df_filtrado[
                 df_filtrado["Nome"].str.contains(filtro_nome, case=False, na=False)
             ]
 
         if filtro_tipo != "Todos":
-            df_filtrado = df_filtrado[
-                (df_filtrado["Tipo 1"] == filtro_tipo)
-                | (df_filtrado["Tipo 2"] == filtro_tipo)
-            ]
+            cond1 = df_filtrado["Tipo 1"] == filtro_tipo if "Tipo 1" in df_filtrado.columns else False
+            cond2 = df_filtrado["Tipo 2"] == filtro_tipo if "Tipo 2" in df_filtrado.columns else False
+            df_filtrado = df_filtrado[cond1 | cond2]
 
         if st.session_state.id_pokemon_selecionado is not None:
             if st.button("⬅ Voltar para a Lista"):
@@ -359,7 +342,9 @@ with abas[0]:
             )
 
             if poke_geral:
-                st.title(f"{poke_geral[2]} #{poke_geral[1]}")
+                nome_p = poke_geral.get("Nome", "Pokémon")
+                dex_no = poke_geral.get("Dex No.", poke_geral.get("ID", ""))
+                st.title(f"{nome_p} #{dex_no}")
 
                 aba1, aba2, aba3, aba4, aba5, aba6 = st.tabs([
                     "📋 Dados Gerais",
@@ -373,11 +358,11 @@ with abas[0]:
                 with aba1:
                     col1, col2 = st.columns([1, 2])
                     with col1:
-                        url_sprite = f"https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites/{poke_geral[0]}.png"
+                        url_sprite = f"https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites/{poke_geral.get('ID')}.png"
                         st.image(
                             url_sprite,
-                            caption=poke_geral[2],
-                            width="stretch",
+                            caption=nome_p,
+                            width=200,
                         )
                     with col2:
                         st.subheader("Informações Biológicas")
@@ -386,20 +371,20 @@ with abas[0]:
                             st.markdown(f"*\"{poke_desc[1]}\"*")
                         st.write("---")
                         
-                        t1 = criar_badge_tipo(poke_geral[3])
-                        t2 = criar_badge_tipo(poke_geral[4]) if poke_geral[4] else ""
+                        t1 = criar_badge_tipo(poke_geral.get("Tipo 1"))
+                        t2 = criar_badge_tipo(poke_geral.get("Tipo 2"))
                         st.markdown(f"**Tipos:** {t1} {t2}", unsafe_allow_html=True)
                         st.markdown(
-                            f"📏 **Tamanho:** {poke_geral[5]} | 🎯 **SR:** {poke_geral[6]}"
+                            f"📏 **Tamanho:** {poke_geral.get('Tamanho', '—')} | 🎯 **SR:** {poke_geral.get('SR', '—')}"
                         )
                         
                         st.write("---")
                         st.subheader("✨ Habilidades")
                         
-                        # Exibição de Habilidade 1, Habilidade 2 e Habilidade Oculta (Escondida)
-                        hab1 = poke_geral[7] if len(poke_geral) > 7 and poke_geral[7] else "Nenhuma"
-                        hab2 = poke_geral[8] if len(poke_geral) > 8 and poke_geral[8] else None
-                        hab_e = poke_geral[9] if len(poke_geral) > 9 and poke_geral[9] else None
+                        # Captura dinâmica de Habilidade 1, 2 e Oculta (E) conforme nomes comuns no SQLite
+                        hab1 = poke_geral.get("Habilidade 1", poke_geral.get("Habilidade1", "Nenhuma"))
+                        hab2 = poke_geral.get("Habilidade 2", poke_geral.get("Habilidade2", None))
+                        hab_e = poke_geral.get("Habilidade E", poke_geral.get("Habilidade_E", poke_geral.get("Habilidade Oculta", None)))
 
                         st.markdown(f"• **Habilidade 1:** `{hab1}`")
                         if hab2 and str(hab2).strip() not in ["-", "", "None", "nan"]:
@@ -412,15 +397,15 @@ with abas[0]:
                     if poke_stats:
                         col_s1, col_s2, col_s3 = st.columns(3)
                         with col_s1:
-                            st.metric("HP", poke_stats[2])
-                            st.metric("FOR", poke_stats[3])
-                            st.metric("DES", poke_stats[4])
+                            st.metric("HP", poke_stats[2] if len(poke_stats) > 2 else "—")
+                            st.metric("FOR", poke_stats[3] if len(poke_stats) > 3 else "—")
+                            st.metric("DES", poke_stats[4] if len(poke_stats) > 4 else "—")
                         with col_s2:
-                            st.metric("CON", poke_stats[5])
-                            st.metric("INT", poke_stats[6])
-                            st.metric("SAB", poke_stats[7])
+                            st.metric("CON", poke_stats[5] if len(poke_stats) > 5 else "—")
+                            st.metric("INT", poke_stats[6] if len(poke_stats) > 6 else "—")
+                            st.metric("SAB", poke_stats[7] if len(poke_stats) > 7 else "—")
                         with col_s3:
-                            st.metric("CAR", poke_stats[8])
+                            st.metric("CAR", poke_stats[8] if len(poke_stats) > 8 else "—")
                             if len(poke_stats) > 12:
                                 st.metric("CA", poke_stats[12])
 
@@ -429,7 +414,7 @@ with abas[0]:
                     if not poke_evo.empty:
                         st.dataframe(
                             poke_evo,
-                            width="stretch",
+                            width=800,
                             hide_index=True,
                         )
                     else:
@@ -440,7 +425,7 @@ with abas[0]:
                     if not poke_loc.empty:
                         st.dataframe(
                             poke_loc,
-                            width="stretch",
+                            width=800,
                             hide_index=True,
                         )
                     else:
@@ -449,11 +434,11 @@ with abas[0]:
                 with aba5:
                     st.subheader("Dados de Cruzamento e Treinamento")
                     if poke_breed:
-                        st.markdown(f"**EV:** {poke_breed[2]}")
-                        st.markdown(f"**Amizade Base:** {poke_breed[3]}")
-                        st.markdown(
-                            f"**Grupo de Ovos:** {poke_breed[4]} / {poke_breed[5]}"
-                        )
+                        st.markdown(f"**EV:** {poke_breed[2] if len(poke_breed) > 2 else '—'}")
+                        st.markdown(f"**Amizade Base:** {poke_breed[3] if len(poke_breed) > 3 else '—'}")
+                        g1 = poke_breed[4] if len(poke_breed) > 4 else '—'
+                        g2 = poke_breed[5] if len(poke_breed) > 5 else '—'
+                        st.markdown(f"**Grupo de Ovos:** {g1} / {g2}")
 
                 with aba6:
                     st.subheader("⚔️ Movimentos e Golpes Aprendidos")
@@ -528,7 +513,7 @@ with abas[0]:
             st.title("PokéDex Completa")
             evento_selecao = st.dataframe(
                 df_filtrado.fillna("-"),
-                width="stretch",
+                width=1000,
                 hide_index=True,
                 on_select="rerun",
                 selection_mode="single-row",
@@ -565,7 +550,7 @@ with abas[1]:
             ]
 
         st.dataframe(
-            df_hab.fillna("-"), width="stretch", hide_index=True
+            df_hab.fillna("-"), width=1000, hide_index=True
         )
 
 # ==============================================================================
@@ -587,27 +572,27 @@ with abas[2]:
         st.sidebar.header("🎒 Filtros do Inventário")
 
         filtro_item_nome = st.sidebar.text_input("Buscar Item por Nome:", "")
-        tipos_itens = ["Todos"] + sorted(list(df_itens["Tipo"].dropna().unique()))
+        tipos_itens = ["Todos"] + sorted(list(df_itens["Tipo"].dropna().unique())) if "Tipo" in df_itens.columns else ["Todos"]
         filtro_item_tipo = st.sidebar.selectbox(
             "Filtrar por Categoria/Tipo:", tipos_itens
         )
 
         df_itens_filtrados = df_itens.copy()
 
-        if filtro_item_nome:
+        if filtro_item_nome and "Nome" in df_itens_filtrados.columns:
             df_itens_filtrados = df_itens_filtrados[
                 df_itens_filtrados["Nome"].str.contains(
                     filtro_item_nome, case=False, na=False
                 )
             ]
 
-        if filtro_item_tipo != "Todos":
+        if filtro_item_tipo != "Todos" and "Tipo" in df_itens_filtrados.columns:
             df_itens_filtrados = df_itens_filtrados[
                 df_itens_filtrados["Tipo"] == filtro_item_tipo
             ]
 
         def processar_exibicao_preco(row):
-            preco_raw = row["Preço"]
+            preco_raw = row.get("Preço", None)
 
             try:
                 if pd.isnull(preco_raw) or preco_raw is None:
@@ -622,7 +607,7 @@ with abas[2]:
             if not st.session_state.modo_mestre:
                 return f"₽ {preco_original:,.2f}", ""
 
-            tipo_item = row["Tipo"]
+            tipo_item = row.get("Tipo", "")
             mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
             preco_final = preco_original * mod
             pct = int(abs(mod - 1.0) * 100)
@@ -648,36 +633,32 @@ with abas[2]:
 
                 if st.session_state.modo_mestre and status_preco:
                     titulo_expander = (
-                        f"📦 **{item['Nome']}** — *{item['Tipo']}* | 💰 **{preco_txt}**"
+                        f"📦 **{item.get('Nome', 'Item')}** — *{item.get('Tipo', '')}* | 💰 **{preco_txt}**"
                         f" ({status_preco})"
                     )
                 else:
                     titulo_expander = (
-                        f"📦 **{item['Nome']}** — *{item['Tipo']}* | 💰 **{preco_txt}**"
+                        f"📦 **{item.get('Nome', 'Item')}** — *{item.get('Tipo', '')}* | 💰 **{preco_txt}**"
                     )
 
                 with st.expander(titulo_expander):
                     col_e1, col_e2 = st.columns([1, 2])
 
                     with col_e1:
-                        st.markdown(f"**Categoria:** `{item['Tipo']}`")
+                        st.markdown(f"**Categoria:** `{item.get('Tipo', '—')}`")
                         st.markdown(f"**Preço:** {preco_txt}")
 
                         if st.session_state.modo_mestre and status_preco:
                             st.caption(f"Status da Flutuação: {status_preco}")
 
-                        if (
-                            pd.notnull(item["Efeito"])
-                            and str(item["Efeito"]).strip() != ""
-                        ):
-                            st.info(f"⚡ **Efeito:** {item['Efeito']}")
+                        efeito = item.get("Efeito", None)
+                        if pd.notnull(efeito) and str(efeito).strip() != "":
+                            st.info(f"⚡ **Efeito:** {efeito}")
 
                     with col_e2:
                         st.markdown("**Descrição Rápida / Lore:**")
                         st.write(
-                            item["Descrição"]
-                            if item["Descrição"]
-                            else "Sem descrição cadastrada."
+                            item.get("Descrição", "Sem descrição cadastrada.")
                         )
         else:
             df_exibicao = df_itens_filtrados.copy()
@@ -692,7 +673,7 @@ with abas[2]:
                 )
 
             df_exibicao = df_exibicao.fillna("-")
-            st.dataframe(df_exibicao, width="stretch", hide_index=True)
+            st.dataframe(df_exibicao, width=1000, hide_index=True)
 
 
 # ==============================================================================
@@ -710,7 +691,7 @@ if st.session_state.modo_mestre:
         df_itens = carregar_dados_itens()
         categorias_existentes = (
             sorted(list(df_itens["Tipo"].dropna().unique()))
-            if not df_itens.empty
+            if not df_itens.empty and "Tipo" in df_itens.columns
             else []
         )
 
