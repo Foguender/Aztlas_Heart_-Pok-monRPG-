@@ -84,12 +84,12 @@ def carregar_dados_pokemon():
     caminho_banco = obter_caminho_banco()
     if not os.path.exists(caminho_banco):
         return pd.DataFrame(
-            columns=["ID", "Dex No.", "Nome", "Tipo 1", "Tipo 2", "Tamanho", "SR", "Habilidade 1" "Habilidade 2", "Habilidade E"]
+            columns=["ID", "Dex No.", "Nome", "Tipo 1", "Tipo 2", "Tamanho", "SR", "Habilidade 1", "Habilidade 2", "Habilidade E"]
         )
 
     with sqlite3.connect(caminho_banco) as conn:
         query = (
-            "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1` `Habilidade 2`, `Habilidade E`
+            "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade 2`, `Habilidade E`
             " FROM pokemon"
         )
         df = pd.read_sql_query(query, conn)
