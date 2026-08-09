@@ -84,14 +84,22 @@ def carregar_dados_pokemon():
     caminho_banco = obter_caminho_banco()
     if not os.path.exists(caminho_banco):
         return pd.DataFrame(
-            columns=["ID", "Dex No.", "Nome", "Tipo 1", "Tipo 2", "Tamanho", "SR"]
+            columns=[
+                "ID",
+                "Dex No.",
+                "Nome",
+                "Tipo 1",
+                "Tipo 2",
+                "Tamanho",
+                "SR",
+                "Habilidade 1",
+                "Habilidade 2",
+                "Habilidade E",
+            ]
         )
 
     with sqlite3.connect(caminho_banco) as conn:
-        query = (
-            "SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`
-            " FROM pokemon"
-        )
+        query = """SELECT `ID`, `Dex No.`, `Nome`, `Tipo 1`, `Tipo 2`, `Tamanho`, `SR`, `Habilidade 1`, `Habilidade 2`, `Habilidade E` FROM pokemon"""
         df = pd.read_sql_query(query, conn)
     return df
 
@@ -120,14 +128,7 @@ def buscar_detalhes_completos(pokemon_id):
             )
             descricao = cursor.fetchone()
         except Exception:
-            try:
-                cursor.execute(
-                    'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID" = ?',
-                    (pokemon_id,),
-                )
-                descricao = cursor.fetchone()
-            except Exception:
-                descricao = ("Sem espécie", "Sem descrição disponível.")
+            descricao = ("Sem espécie", "Sem descrição disponível.")
 
         # 3. Base Stats
         cursor.execute(
@@ -388,9 +389,20 @@ with abas[0]:
                         t2 = criar_badge_tipo(poke_geral[4]) if poke_geral[4] else ""
                         st.markdown(f"**Tipos:** {t1} {t2}", unsafe_allow_html=True)
                         st.markdown(
-                            f"📏 **Tamanho:** {poke_geral[5]} | 🎯 **SR:**"
-                            f" {poke_geral[6]}"
+                            f"📏 **Tamanho:** {poke_geral[5]} | 🎯 **SR:** {poke_geral[6]}"
                         )
+                        
+                        st.write("---")
+                        st.subheader("✨ Habilidades")
+                        hab1 = poke_geral[7] if len(poke_geral) > 7 and poke_geral[7] else "Nenhuma"
+                        hab2 = poke_geral[8] if len(poke_geral) > 8 and poke_geral[8] else None
+                        hab_e = poke_geral[9] if len(poke_geral) > 9 and poke_geral[9] else None
+
+                        st.markdown(f"• **Habilidade 1:** `{hab1}`")
+                        if hab2 and str(hab2).strip() not in ["-", "", "None"]:
+                            st.markdown(f"• **Habilidade 2:** `{hab2}`")
+                        if hab_e and str(hab_e).strip() not in ["-", "", "None"]:
+                            st.markdown(f"• **Habilidade Oculta (E):** `{hab_e}`")
 
                 with aba2:
                     st.subheader("Atributos de RPG (Sistema D20)")
@@ -411,19 +423,25 @@ with abas[0]:
 
                 with aba3:
                     st.subheader("Linhagem de Evolução")
-                    st.dataframe(
-                        poke_evo if not poke_evo.empty else "Sem evoluções.",
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                    if not poke_evo.empty:
+                        st.dataframe(
+                            poke_evo,
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                    else:
+                        st.info("Este Pokémon não possui evoluções ou não há registros na tabela.")
 
                 with aba4:
                     st.subheader("Locais de Aparição em Aztlas")
-                    st.dataframe(
-                        poke_loc if not poke_loc.empty else "Sem locais salvos.",
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                    if not poke_loc.empty:
+                        st.dataframe(
+                            poke_loc,
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                    else:
+                        st.info("Sem locais de aparição cadastrados.")
 
                 with aba5:
                     st.subheader("Dados de Cruzamento e Treinamento")
@@ -431,8 +449,7 @@ with abas[0]:
                         st.markdown(f"**EV:** {poke_breed[2]}")
                         st.markdown(f"**Amizade Base:** {poke_breed[3]}")
                         st.markdown(
-                            f"**Grupo de Ovos:** {poke_breed[4]} /"
-                            f" {poke_breed[5]}"
+                            f"**Grupo de Ovos:** {poke_breed[4]} / {poke_breed[5]}"
                         )
 
                 with aba6:
