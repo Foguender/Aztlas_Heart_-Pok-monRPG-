@@ -86,7 +86,6 @@ def carregar_dados_pokemon():
         return pd.DataFrame()
 
     with sqlite3.connect(caminho_banco) as conn:
-        # SELECT * evita quebras por nomes de colunas diferentes
         query = """SELECT * FROM pokemon"""
         df = pd.read_sql_query(query, conn)
     return df
@@ -99,14 +98,26 @@ def carregar_tabela_segura(conn, query, params=()):
         return pd.DataFrame()
 
 
+def obter_coluna_flexivel(dados_dict, busca_termos, padrao=None):
+    """Procura uma coluna no dicionário ignorando maiúsculas, espaços, underlines e typos simples."""
+    for chave in dados_dict.keys():
+        chave_normalizada = str(chave).replace(" ", "").replace("_", "").lower()
+        for termo in busca_termos:
+            termo_normalizado = termo.replace(" ", "").replace("_", "").lower()
+            if termo_normalizado in chave_normalizada:
+                val = dados_dict[chave]
+                if pd.notnull(val) and str(val).strip() not in ["-", "", "None", "nan"]:
+                    return val
+    return padrao
+
+
 def buscar_detalhes_completos(pokemon_id):
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
-        # Fetching as dict/DataFrame para garantir acesso dinâmico por coluna
         df_geral = carregar_tabela_segura(conn, 'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
         gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
-        # 2. Descrição
+        # Descrição
         try:
             cursor = conn.cursor()
             cursor.execute(
@@ -117,7 +128,7 @@ def buscar_detalhes_completos(pokemon_id):
         except Exception:
             descricao = ("Sem espécie", "Sem descrição disponível.")
 
-        # 3. Base Stats
+        # Base Stats
         cursor = conn.cursor()
         cursor.execute(
             'SELECT * FROM "Base Stats" WHERE "id_pokemon" = ?', (pokemon_id,)
@@ -129,13 +140,13 @@ def buscar_detalhes_completos(pokemon_id):
             )
             stats = cursor.fetchone()
 
-        # 4. Breeding & Training
+        # Breeding & Training
         cursor.execute(
             'SELECT * FROM "Tr_Br" WHERE "ID" = ?', (pokemon_id,)
         )
         breeding = cursor.fetchone()
 
-        # 5. Golpes
+        # Golpes
         learnset_df = carregar_tabela_segura(
             conn,
             'SELECT * FROM "Learnset_pokemon" WHERE "pokemon_id" = ? OR "ID" = ?',
@@ -164,7 +175,7 @@ def buscar_detalhes_completos(pokemon_id):
                 (pokemon_id,),
             )
 
-        # 6. Evoluções
+        # Evoluções
         query_evo = """
             SELECT 
                 p1.Nome AS [Forma Inicial],
@@ -182,7 +193,7 @@ def buscar_detalhes_completos(pokemon_id):
             conn, query_evo, (pokemon_id, pokemon_id, pokemon_id)
         )
 
-        # 7. Localização
+        # Localização
         loc_df = pd.DataFrame()
         for nome_tabela in [
             "Locations_Pok mon",
@@ -381,15 +392,15 @@ with abas[0]:
                         st.write("---")
                         st.subheader("✨ Habilidades")
                         
-                        # Captura dinâmica de Habilidade 1, 2 e Oculta (E) conforme nomes comuns no SQLite
-                        hab1 = poke_geral.get("Habilidade 1", poke_geral.get("Habilidade1", "Nenhuma"))
-                        hab2 = poke_geral.get("Habilidade 2", poke_geral.get("Habilidade2", None))
-                        hab_e = poke_geral.get("Habilidade E", poke_geral.get("Habilidade_E", poke_geral.get("Habilidade Oculta", None)))
+                        # Mapeamento flexível das habilidades (incluindo o typo 'Habildade')
+                        hab1 = obter_coluna_flexivel(poke_geral, ["habilidade1", "habilidad1", "habildade1"], padrao="Nenhuma")
+                        hab2 = obter_coluna_flexivel(poke_geral, ["habilidade2", "habilidad2", "habildade2"], padrao=None)
+                        hab_e = obter_coluna_flexivel(poke_geral, ["habilidadee", "habilidades", "habilidadeoculta", "habildadee"], padrao=None)
 
                         st.markdown(f"• **Habilidade 1:** `{hab1}`")
-                        if hab2 and str(hab2).strip() not in ["-", "", "None", "nan"]:
+                        if hab2:
                             st.markdown(f"• **Habilidade 2:** `{hab2}`")
-                        if hab_e and str(hab_e).strip() not in ["-", "", "None", "nan"]:
+                        if hab_e:
                             st.markdown(f"• **Habilidade Oculta (Escondida):** `{hab_e}`")
 
                 with aba2:
