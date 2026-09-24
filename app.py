@@ -45,18 +45,18 @@ def criar_badge_tipo(tipo):
 
     cor = cores_tipos.get(str(tipo).capitalize(), "#777777")
     return f"""<span style="
-        background-color: {cor};
-        color: white;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        font-size: 11px;
-        text-transform: uppercase;
-        display: inline-block;
-        min-width: 65px;
-        text-align: center;">
-        {tipo}
-    </span>"""
+background-color: {cor};
+color: white;
+padding: 3px 8px;
+border-radius: 4px;
+font-weight: bold;
+font-size: 11px;
+text-transform: uppercase;
+display: inline-block;
+min-width: 65px;
+text-align: center;">
+{tipo}
+</span>"""
 
 
 def criar_badge_categoria(categoria):
@@ -88,7 +88,7 @@ def carregar_dados_pokemon():
     with sqlite3.connect(caminho_banco) as conn:
         query = """SELECT * FROM pokemon"""
         df = pd.read_sql_query(query, conn)
-    return df
+        return df
 
 
 def carregar_tabela_segura(conn, query, params=()):
@@ -114,7 +114,9 @@ def obter_coluna_flexivel(dados_dict, busca_termos, padrao=None):
 def buscar_detalhes_completos(pokemon_id):
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
-        df_geral = carregar_tabela_segura(conn, 'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,))
+        df_geral = carregar_tabela_segura(
+            conn, 'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,)
+        )
         gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
         # Descrição
@@ -177,17 +179,17 @@ def buscar_detalhes_completos(pokemon_id):
 
         # Evoluções
         query_evo = """
-            SELECT 
-                p1.Nome AS [Forma Inicial],
-                e.forma_de_2evoluir AS [Método / Requisito 1],
-                p2.Nome AS [2ª Evolução],
-                e.forma_de_3evoluir AS [Método / Requisito 2],
-                p3.Nome AS [3ª Evolução]
-            FROM Evolution_chart e
-            LEFT JOIN pokemon p1 ON e.pokemon_id_1 = p1.ID
-            LEFT JOIN pokemon p2 ON e.pokemon_id_2 = p2.ID
-            LEFT JOIN pokemon p3 ON e.pokemon_id_3 = p3.ID
-            WHERE e.pokemon_id_1 = ? OR e.pokemon_id_2 = ? OR e.pokemon_id_3 = ?
+        SELECT
+        p1.Nome AS [Forma Inicial],
+        e.forma_de_2evoluir AS [Método / Requisito 1],
+        p2.Nome AS [2ª Evolução],
+        e.forma_de_3evoluir AS [Método / Requisito 2],
+        p3.Nome AS [3ª Evolução]
+        FROM Evolution_chart e
+        LEFT JOIN pokemon p1 ON e.pokemon_id_1 = p1.ID
+        LEFT JOIN pokemon p2 ON e.pokemon_id_2 = p2.ID
+        LEFT JOIN pokemon p3 ON e.pokemon_id_3 = p3.ID
+        WHERE e.pokemon_id_1 = ? OR e.pokemon_id_2 = ? OR e.pokemon_id_3 = ?
         """
         evo_df = carregar_tabela_segura(
             conn, query_evo, (pokemon_id, pokemon_id, pokemon_id)
@@ -201,25 +203,25 @@ def buscar_detalhes_completos(pokemon_id):
             "location_pokemon",
         ]:
             query_loc = f"""
-                SELECT l.Location AS [Local], lp.spawn_method AS [Método], 
-                       lp.chance_rate AS [Chance], lp.min_level AS [Nível Mín], 
-                       lp.max_level AS [Nível Máx], lp.time_of_day AS [Horário]
-                FROM "{nome_tabela}" lp
-                JOIN Locations l ON lp.location_id = l.ID
-                WHERE lp.pokemon_id = ?
+            SELECT l.Location AS [Local], lp.spawn_method AS [Método],
+            lp.chance_rate AS [Chance], lp.min_level AS [Nível Mín],
+            lp.max_level AS [Nível Máx], lp.time_of_day AS [Horário]
+            FROM "{nome_tabela}" lp
+            JOIN Locations l ON lp.location_id = l.ID
+            WHERE lp.pokemon_id = ?
             """
             loc_df = carregar_tabela_segura(conn, query_loc, (pokemon_id,))
             if not loc_df.empty:
                 break
 
-    golpes_dict = {
-        "learnset": learnset_df,
-        "tm": tm_df,
-        "egg": egg_df,
-        "teacher": teacher_df,
-    }
+        golpes_dict = {
+            "learnset": learnset_df,
+            "tm": tm_df,
+            "egg": egg_df,
+            "teacher": teacher_df,
+        }
 
-    return gerais, descricao, stats, breeding, golpes_dict, evo_df, loc_df
+        return gerais, descricao, stats, breeding, golpes_dict, evo_df, loc_df
 
 
 def carregar_dados_habilidades():
@@ -231,8 +233,10 @@ def carregar_dados_habilidades():
         for nome_tabela in ["Habilidades", "Abilities", "habilidades"]:
             df = carregar_tabela_segura(conn, f'SELECT * FROM "{nome_tabela}"')
             if not df.empty:
+                # Corrigir potenciais erros de codificação de caracteres nas colunas
+                df.columns = [c.replace("DescriÃ§ao", "Descrição").replace("Descricao", "Descrição") for c in df.columns]
                 return df
-    return pd.DataFrame()
+        return pd.DataFrame()
 
 
 def carregar_dados_itens():
@@ -243,12 +247,12 @@ def carregar_dados_itens():
     with sqlite3.connect(caminho_banco) as conn:
         df_itens = carregar_tabela_segura(conn, 'SELECT * FROM "Itens"')
 
-    if "PreÃ§o" in df_itens.columns:
-        df_itens.rename(columns={"PreÃ§o": "Preço"}, inplace=True)
-    if "Preço" in df_itens.columns:
-        df_itens["Preço"] = pd.to_numeric(df_itens["Preço"], errors="coerce")
+        if "PreÃ§o" in df_itens.columns:
+            df_itens.rename(columns={"PreÃ§o": "Preço"}, inplace=True)
+        if "Preço" in df_itens.columns:
+            df_itens["Preço"] = pd.to_numeric(df_itens["Preço"], errors="coerce")
 
-    return df_itens
+        return df_itens
 
 
 # -----------------------------------------------------------------------------
@@ -318,7 +322,6 @@ with abas[0]:
         col_t1 = df_pokemon["Tipo 1"].dropna().unique() if "Tipo 1" in df_pokemon.columns else []
         col_t2 = df_pokemon["Tipo 2"].dropna().unique() if "Tipo 2" in df_pokemon.columns else []
         tipos_disponiveis = sorted(list(set(col_t1) | set(col_t2)))
-        
         filtro_tipo = st.sidebar.selectbox(
             "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
         )
@@ -381,18 +384,14 @@ with abas[0]:
                             st.markdown(f"**Espécie:** {poke_desc[0]}")
                             st.markdown(f"*\"{poke_desc[1]}\"*")
                         st.write("---")
-                        
                         t1 = criar_badge_tipo(poke_geral.get("Tipo 1"))
                         t2 = criar_badge_tipo(poke_geral.get("Tipo 2"))
                         st.markdown(f"**Tipos:** {t1} {t2}", unsafe_allow_html=True)
                         st.markdown(
                             f"📏 **Tamanho:** {poke_geral.get('Tamanho', '—')} | 🎯 **SR:** {poke_geral.get('SR', '—')}"
                         )
-                        
                         st.write("---")
                         st.subheader("✨ Habilidades")
-                        
-                        # Mapeamento flexível das habilidades (incluindo o typo 'Habildade')
                         hab1 = obter_coluna_flexivel(poke_geral, ["habilidade1", "habilidad1", "habildade1"], padrao="Nenhuma")
                         hab2 = obter_coluna_flexivel(poke_geral, ["habilidade2", "habilidad2", "habildade2"], padrao=None)
                         hab_e = obter_coluna_flexivel(poke_geral, ["habilidadee", "habilidades", "habilidadeoculta", "habildadee"], padrao=None)
@@ -553,16 +552,42 @@ with abas[1]:
     if df_hab.empty:
         st.warning("Nenhuma tabela de habilidades foi encontrada no banco de dados.")
     else:
-        filtro_hab = st.text_input("Buscar Habilidade por Nome:", "")
-        if filtro_hab:
-            coluna_nome = df_hab.columns[0]
-            df_hab = df_hab[
-                df_hab[coluna_nome].str.contains(filtro_hab, case=False, na=False)
-            ]
+        filtro_hab = st.text_input("🔍 Buscar Habilidade por Nome, Efeito ou Descrição:", "")
 
-        st.dataframe(
-            df_hab.fillna("-"), width=1000, hide_index=True
+        df_hab_filtradas = df_hab.copy()
+
+        if filtro_hab:
+            condicoes = pd.Series([False] * len(df_hab_filtradas))
+            for col in df_hab_filtradas.columns:
+                condicoes = condicoes | df_hab_filtradas[col].astype(str).str.contains(filtro_hab, case=False, na=False)
+            df_hab_filtradas = df_hab_filtradas[condicoes]
+
+        vis_hab = st.radio(
+            "Modo de Visualização das Habilidades:",
+            ["📋 Fichas Detalhadas", "📊 Tabela Geral"],
+            horizontal=True,
+            key="vis_hab_radio"
         )
+
+        if vis_hab == "📋 Fichas Detalhadas":
+            if df_hab_filtradas.empty:
+                st.info("Nenhuma habilidade encontrada para o termo pesquisado.")
+            else:
+                for _, hab in df_hab_filtradas.iterrows():
+                    nome_h = hab.get("Nome", hab.get("ID", "Habilidade"))
+                    efeito_h = hab.get("Efeito", "")
+                    desc_h = hab.get("Descrição", hab.get("DescriÃ§ao", ""))
+
+                    with st.expander(f"✨ **{nome_h}**"):
+                        if pd.notnull(efeito_h) and str(efeito_h).strip() not in ["", "-", "None"]:
+                            st.info(f"⚡ **Efeito:** {efeito_h}")
+                        if pd.notnull(desc_h) and str(desc_h).strip() not in ["", "-", "None"]:
+                            st.markdown(f"**Descrição / Detalhes:**\n{desc_h}")
+        else:
+            st.dataframe(
+                df_hab_filtradas.fillna("-"), width=1000, hide_index=True
+            )
+
 
 # ==============================================================================
 # ABA 3: COMPÊNDIO DE ITENS
