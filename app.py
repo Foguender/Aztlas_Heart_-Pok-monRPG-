@@ -233,7 +233,6 @@ def carregar_dados_habilidades():
         for nome_tabela in ["Habilidades", "Abilities", "habilidades"]:
             df = carregar_tabela_segura(conn, f'SELECT * FROM "{nome_tabela}"')
             if not df.empty:
-                # Corrigir potenciais erros de codificação de caracteres nas colunas
                 df.columns = [c.replace("DescriÃ§ao", "Descrição").replace("Descricao", "Descrição") for c in df.columns]
                 return df
         return pd.DataFrame()
@@ -301,6 +300,7 @@ abas_disponiveis = [
     "✨ Compêndio de Habilidades",
     "🎒 Compêndio de Itens",
 ]
+
 if st.session_state.modo_mestre:
     abas_disponiveis.append("🧙‍♂️ Escudo do Mestre")
 
@@ -713,15 +713,15 @@ with abas[2]:
 
 
 # ==============================================================================
-# ABA 4: ESCUDO DO MESTRE
+# ABA 4: ESCUDO DO MESTRE (Com Roleplay Exclusivo)
 # ==============================================================================
 if st.session_state.modo_mestre:
     with abas[3]:
         st.title("🧙‍♂️ Escudo do Mestre")
-        st.markdown("Painel de gerenciamento do ecossistema e economia de Aztlas.")
+        st.markdown("Painel de gerenciamento do ecossistema, narração e economia de Aztlas.")
 
-        sub_mercado, sub_regras = st.tabs(
-            ["🎲 Algoritmo de Mercado", "📜 Regras Rápidas"]
+        sub_mercado, sub_roleplay, sub_regras = st.tabs(
+            ["🎲 Algoritmo de Mercado", "🎭 Roleplay Ativo & Improv", "📜 Regras Rápidas"]
         )
 
         df_itens = carregar_dados_itens()
@@ -731,6 +731,9 @@ if st.session_state.modo_mestre:
             else []
         )
 
+        # ----------------------------------------------------------------------
+        # SUB-ABA 1: MERCADO
+        # ----------------------------------------------------------------------
         with sub_mercado:
             st.subheader("⚡ Gerador de Economia Automática")
 
@@ -772,6 +775,49 @@ if st.session_state.modo_mestre:
                     else:
                         st.write(f"• **{cat}**: ⚖️ **0%** (Preço Base Original)")
 
+        # ----------------------------------------------------------------------
+        # SUB-ABA 2: ROLEPLAY ATIVO & IMPROVISAÇÃO (EXCLUSIVO MESTRE)
+        # ----------------------------------------------------------------------
+        with sub_roleplay:
+            st.subheader("🎭 Módulo de Roleplay & Narrativa em Tempo Real")
+            st.markdown("Ferramentas rápidas de suporte para condução de cenas e encontros aleatórios.")
+
+            col_rp1, col_rp2 = st.columns(2)
+
+            with col_rp1:
+                st.markdown("### 🎲 Gerador de Encontros & Eventos Ambientais")
+                if st.button("🔮 Sorteia Evento / Clima Repentino"):
+                    climas = ["Tempestade de Areia", "Chuva Forte", "Nevasca Repentina", "Sol Escaldante", "Névoa Densa", "Vendaval"]
+                    eventos = [
+                        "Um Pokémon territorialista bloqueia a passagem.",
+                        "Treinadores rivais exigem uma batalha de apostas.",
+                        "Um ninho vulnerável precisa de proteção contra predadores.",
+                        "Um item valioso está preso em um terreno perigoso.",
+                        "Um NPC ferido pede ajuda desesperadamente.",
+                        "Fenômeno elemental estranho altera as habilidades da área."
+                    ]
+                    st.info(f"☀️ **Clima Atual:** {random.choice(climas)}\n\n❓ **Complicação:** {random.choice(eventos)}")
+
+            with col_rp2:
+                st.markdown("### 👤 Criador Rápido de NPC")
+                if st.button("🎲 Gerar NPC Rápido"):
+                    nomes_npc = ["Arthur", "Bia", "Carlos", "Diana", "Enzo", "Fernanda", "Gael", "Helena"]
+                    personalidades = ["Arrogante e impaciente", "Curioso e falante", "Misterioso e reservado", "Entusiasta e ingênuo", "Cético e observador"]
+                    objetivos = ["Procurando um Pokémon específico", "Perdido na rota", "Desafiando treinadores fortes", "Coletando bagas raras"]
+
+                    st.success(
+                        f"**Nome:** {random.choice(nomes_npc)}\n\n"
+                        f"**Personalidade:** {random.choice(personalidades)}\n\n"
+                        f"**Motivação:** {random.choice(objetivos)}"
+                    )
+
+            st.write("---")
+            st.markdown("### 📝 Bloco de Anotações Secretas do Mestre")
+            st.text_area("Anotações da Sessão (não salvas permanentemente):", height=150, placeholder="Ex: Grupo decidiu seguir para a Rota 4. O NPC Marcos prometeu uma recompensa em 2 dias...")
+
+        # ----------------------------------------------------------------------
+        # SUB-ABA 3: REGRAS RÁPIDAS
+        # ----------------------------------------------------------------------
         with sub_regras:
             st.subheader("📜 Regras Rápidas & Tabelas de Apoio")
 
