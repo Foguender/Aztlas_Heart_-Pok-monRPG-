@@ -1,4 +1,5 @@
 import os
+import random
 import sqlite3
 import pandas as pd
 import streamlit as st
@@ -40,101 +41,175 @@ st.markdown(
 
 
 # -----------------------------------------------------------------------------
-# 2. FUNÇÕES DE CONEXÃO COM O BANCO DE DADOS
+# 2. FUNÇÕES AUXILIARES DE BADGES
+# -----------------------------------------------------------------------------
+def criar_badge_tipo(tipo):
+  if not tipo or pd.isna(tipo) or str(tipo).strip() in ["-", "", "None"]:
+    return ""
+
+  cores_tipos = {
+      "Normal": "#AAAA99",
+      "Fogo": "#FF4422",
+      "Água": "#3399FF",
+      "Grama": "#6CC644",
+      "Elétrico": "#F7D02C",
+      "Eletrico": "#FfCC33",
+      "Gelo": "#96D9D6",
+      "Lutador": "#C22E28",
+      "Venenoso": "#AA5599",
+      "Veneno": "#A33EA0",
+      "Terra": "#DDBB55",
+      "Voador": "#8899ff",
+      "Psíquico": "#FF5599",
+      "Psiquico": "#F95587",
+      "Inseto": "#AABB22",
+      "Pedra": "#B6A136",
+      "Fantasma": "#735797",
+      "Dragão": "#6F35FC",
+      "Sombrio": "#775544",
+      "Aço": "#6CC644",
+      "Fada": "#D685AD",
+  }
+
+  cor = cores_tipos.get(str(tipo).capitalize(), "#777777")
+  return f"""<span style="
+background-color: {cor};
+color: white;
+padding: 3px 8px;
+border-radius: 4px;
+font-weight: bold;
+font-size: 11px;
+text-transform: uppercase;
+display: inline-block;
+min-width: 65px;
+text-align: center;">
+{tipo}
+</span>"""
+
+
+# -----------------------------------------------------------------------------
+# 3. CONEXÃO COM O BANCO DE DADOS
 # -----------------------------------------------------------------------------
 def obter_caminho_banco():
   caminho_atual = os.path.dirname(__file__)
   return os.path.join(caminho_atual, "Aztlas_Dex.db")
 
 
-def carregar_resumo_pokemon():
+def carregar_dados_pokemon():
   caminho_banco = obter_caminho_banco()
   if not os.path.exists(caminho_banco):
     return pd.DataFrame()
 
   with sqlite3.connect(caminho_banco) as conn:
-    query = """
-            SELECT Nome, "Dex No.", "Tipo 1", "Tipo 2", SR 
-            FROM Pokemon 
-            ORDER BY ID
-        """
+    # Carrega a tabela resumida para a lista inicial
+    query = """SELECT ID, Nome, "Dex No.", "Tipo 1", "Tipo 2", SR FROM Pokemon ORDER BY ID"""
     return pd.read_sql_query(query, conn)
 
 
-def carregar_detalhes_pokemon(nome_pokemon):
+def buscar_detalhes_pokemon(pokemon_id):
   caminho_banco = obter_caminho_banco()
-  if not os.path.exists(caminho_banco):
-    return None
-
   with sqlite3.connect(caminho_banco) as conn:
-    # Pega absolutamente TUDO (`*`) daquele Pokémon específico
-    query = "SELECT * FROM Pokemon WHERE Nome = ?"
-    df = pd.read_sql_query(query, conn, params=(nome_pokemon,))
-    if not df.empty:
-      return df.iloc[0]  # Retorna a primeira linha como um dicionário/série de dados
-  return None
+    df = pd.read_sql_query(
+        "SELECT * FROM Pokemon WHERE ID = ?", conn, params=(pokemon_id,)
+    )
+    return df.iloc[0].to_dict() if not df.empty else None
 
 
 # -----------------------------------------------------------------------------
-# 3. ESTRUTURA PRINCIPAL DO SITE (ABAS)
+# 4. CONTROLE DE ESTADO DA SESSÃO
+# -----------------------------------------------------------------------------
+if "id_pokemon_selecionado" not in st.session_state:
+  st.session_state.id_pokemon_selecionado = None
+
+
+# -----------------------------------------------------------------------------
+# 5. ESTRUTURA PRINCIPAL DO SITE
 # -----------------------------------------------------------------------------
 st.title("🐾 PokéDex Regional - Aztlas")
-st.markdown("Painel central do RPG de mesa.")
 
-abas = st.tabs(["📋 Pokédex", "✨ Habilidades", "🎒 Itens"])
+abas = st.tabs(
+    ["📋 Pokédex Regional", "✨ Compêndio de Habilidades", "🎒 Compêndio de Itens"]
+)
 
+# ==============================================================================
+# ABA 1: POKÉDEX REGIONAL (COM NAVEGAÇÃO POR CLIQUE NA LINHA)
+# ==============================================================================
 with abas[0]:
-  st.subheader("Compêndio de Pokémon - Visão Rápida")
+  df_pokemon = carregar_dados_pokemon()
 
-  df_resumo = carregar_resumo_pokemon()
-
-  if not df_resumo.empty:
-    # Mostramos a tabela resumida
-    st.dataframe(df_resumo, use_container_width=True, hide_index=True)
-
-    st.markdown("---")
-    st.subheader("🔍 Ficha Completa do Pokémon")
-
-    # Criamos uma caixa de seleção para escolher o Pokémon pelo nome
-    lista_nomes = df_resumo["Nome"].tolist()
-    pokemon_escolhido = st.selectbox(
-        "Selecione um Pokémon para ver todos os detalhes:", lista_nomes
-    )
-
-    if pokemon_escolhido:
-      # Buscamos todas as informações detalhadas dele no banco
-      dados_pkmn = carregar_detalhes_pokemon(pokemon_escolhido)
-
-      if dados_pkmn is not None:
-        # Exibimos os dados de forma organizada (tipo ficha de RPG)
-        st.markdown(f"### 🛡️ Ficha: {dados_pkmn['Nome']}")
-
-        # Exemplo de organização em colunas para os atributos principais
-        col1, col2, col3 = st.columns(3)
-        with col1:
-          st.write(f"**Número na Dex:** {dados_pkmn['Dex No.']}")
-          st.write(f"**Tipo 1:** {dados_pkmn['Tipo 1']}")
-        with col2:
-          st.write(f"**Tipo 2:** {dados_pkmn.get('Tipo 2', 'Nenhum')}")
-          st.write(f"**SR (Desafio):** {dados_pkmn['SR']}")
-        with col3:
-          st.write(f"**Tamanho:** {dados_pkmn.get('Tamanho', 'Desconhecido')}")
-
-        # Se quiseres ver todas as colunas brutas que existem na linha caso queiras conferir:
-        with st.expander("Ver dados brutos completos da tabela"):
-          st.write(dados_pkmn)
-      else:
-        st.warning("Não foram encontrados detalhes para este Pokémon.")
+  if df_pokemon.empty:
+    st.warning("O banco de dados de Pokémon não foi encontrado ou está vazio.")
   else:
-    st.info(
-        "A tabela de Pokémon está vazia ou o ficheiro de base de dados não foi"
-        " encontrado."
-    )
+    # SE UM POKÉMON FOI SELECIONADO -> MOSTRA A FICHA DETALHADA
+    if st.session_state.id_pokemon_selecionado is not None:
+      if st.button("⬅ Voltar para a Lista"):
+        st.session_state.id_pokemon_selecionado = None
+        st.rerun()
 
+      poke_geral = buscar_detalhes_pokemon(
+          st.session_state.id_pokemon_selecionado
+      )
+
+      if poke_geral:
+        nome_p = poke_geral.get("Nome", "Pokémon")
+        dex_no = poke_geral.get("Dex No.", poke_geral.get("ID", ""))
+        st.subheader(f"🛡️ Ficha: {nome_p} #{dex_no}")
+
+        aba1, aba2 = st.tabs(["📋 Dados Gerais", "📊 Atributos de RPG"])
+
+        with aba1:
+          col1, col2 = st.columns([1, 2])
+          with col1:
+            st.metric("Número na Dex", f"#{dex_no}")
+            t1 = criar_badge_tipo(poke_geral.get("Tipo 1"))
+            t2 = criar_badge_tipo(poke_geral.get("Tipo 2"))
+            st.markdown(f"**Tipos:** {t1} {t2}", unsafe_allow_html=True)
+          with col2:
+            st.markdown(f"**SR (Nível de Desafio):** {poke_geral.get('SR', '—')}")
+            st.markdown(
+                f"**Tamanho:** {poke_geral.get('Tamanho', 'Desconhecido')}"
+            )
+            st.markdown(
+                f"**Habilidade 1:** `{poke_geral.get('Habilidade 1', 'Nenhuma')}`"
+            )
+
+        with aba2:
+          st.write("**Dados brutos do Pokémon:**")
+          st.json(poke_geral)
+
+    # SE NENHUM POKÉMON FOI SELECIONADO -> MOSTRA A TABELA COMPLETA
+    else:
+      st.markdown(
+          "Clique em qualquer linha da tabela para abrir a ficha completa do"
+          " Pokémon:"
+      )
+
+      # Usa o evento de seleção de linha do Streamlit!
+      evento_selecao = st.dataframe(
+          df_pokemon.fillna("-"),
+          use_container_width=True,
+          hide_index=True,
+          on_select="rerun",
+          selection_mode="single-row",
+      )
+
+      # Captura o clique na tabela e guarda o ID no session_state
+      if (
+          evento_selecao
+          and "selection" in evento_selecao
+          and evento_selecao["selection"]["rows"]
+      ):
+        idx = evento_selecao["selection"]["rows"][0]
+        st.session_state.id_pokemon_selecionado = df_pokemon.iloc[idx]["ID"]
+        st.rerun()
+
+# ==============================================================================
+# ABAS SECUNDÁRIAS
+# ==============================================================================
 with abas[1]:
-  st.subheader("Habilidades Passivas")
-  st.info("Em breve: Lista de habilidades.")
+  st.subheader("✨ Compêndio de Habilidades")
+  st.info("Espaço reservado para as habilidades do sistema.")
 
 with abas[2]:
-  st.subheader("Itens e Equipamentos")
-  st.info("Em breve: Gestão de itens.")
+  st.subheader("🎒 Compêndio de Itens")
+  st.info("Espaço reservado para os itens e equipamentos.")
