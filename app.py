@@ -5,6 +5,9 @@ import streamlit as st
 
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
+# -----------------------------------------------------------------------------
+# ESTILIZAÇÃO CSS - AZUL MAIS FORTE E ANIMADO
+# -----------------------------------------------------------------------------
 st.markdown(
     """
     <style>
@@ -15,26 +18,30 @@ st.markdown(
     }
 
     .stApp {
-        background: linear-gradient(-45deg, #a0e0ff, #cceeff, #80d4ff, #e6f7ff);
+        /* Mudamos para tons de azul muito mais fortes e ricos */
+        background: linear-gradient(-45deg, #003366, #005c8a, #0077b6, #023e8a);
         background-size: 400% 400%;
-        animation: fundoAnimado 15s ease infinite;
+        /* Diminuímos para 10s para a mudança de cor ficar mais rápida e visível */
+        animation: fundoAnimado 10s ease infinite;
     }
 
+    /* Caixa central com fundo claro para garantir que a leitura fique perfeita */
     .main .block-container {
-        border: 2px solid rgba(255, 255, 255, 0.8);
+        border: 2px solid #90e0ef;
         border-radius: 12px;
         padding: 2rem;
-        background-color: rgba(255, 255, 255, 0.9);
-        color: #1a2b4c !important;
+        background-color: rgba(255, 255, 255, 0.92);
     }
 
+    /* Textos com um azul bem escuro (quase preto) para dar contraste máximo */
     h1, h2, h3, h4, h5, h6, p, span, label, div {
-        color: #1a2b4c !important;
+        color: #03045e !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 def obter_caminho_banco():
   caminho_atual = os.path.dirname(__file__)
   return os.path.join(caminho_atual, "Aztlas_Dex.db")
