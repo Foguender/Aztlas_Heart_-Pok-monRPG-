@@ -3,12 +3,8 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-# -----------------------------------------------------------------------------
-# 1. CONFIGURAÇÃO DA PÁGINA E VISUAL
-# -----------------------------------------------------------------------------
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
-# Injetamos o CSS para dar o toque de interface de jogo de Pokémon
 st.markdown(
     """
     <style>
@@ -29,16 +25,16 @@ st.markdown(
         border-radius: 12px;
         padding: 2rem;
         background-color: rgba(255, 255, 255, 0.9);
+        color: #1a2b4c !important;
+    }
+
+    h1, h2, h3, h4, h5, h6, p, span, label, div {
+        color: #1a2b4c !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
-
-# -----------------------------------------------------------------------------
-# 2. CONEXÃO COM O BANCO DE DADOS
-# -----------------------------------------------------------------------------
 def obter_caminho_banco():
   caminho_atual = os.path.dirname(__file__)
   return os.path.join(caminho_atual, "Aztlas_Dex.db")
@@ -58,20 +54,14 @@ def carregar_dados_pokemon():
     df = pd.read_sql_query(query, conn)
     return df
 
-
-# -----------------------------------------------------------------------------
-# 3. ESTRUTURA PRINCIPAL DO SITE
-# -----------------------------------------------------------------------------
 st.title("🐾 PokéDex Regional - Aztlas")
 st.markdown("Bem-vindo ao painel central do RPG!")
 
-# Criamos as abas iniciais
 abas = st.tabs(["📋 Pokédex", "✨ Habilidades", "🎒 Itens"])
 
 with abas[0]:
   st.subheader("Lista de Pokémon Registados")
 
-  # Carregamos os dados usando a função que criamos
   df_pokemon = carregar_dados_pokemon()
 
   if not df_pokemon.empty:
