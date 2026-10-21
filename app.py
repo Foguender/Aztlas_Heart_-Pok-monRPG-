@@ -4,7 +4,7 @@ import panda as pd
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Pokédex Aztlas", page_icon="   ", layout="wide"
+st.set_page_config(page_title="Pokédex Aztlas", page_icon="   ", layout="wide")
 
 st. markdown(
   """
