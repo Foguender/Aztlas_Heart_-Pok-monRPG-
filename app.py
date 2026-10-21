@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
 # -----------------------------------------------------------------------------
-# ESTILIZAÇÃO CSS - AZUL MAIS FORTE E ANIMADO
+# ESTILIZAÇÃO CSS - TEMA AZUL CERÚLEO (ESTILO POKÉDEX CLÁSSICA)
 # -----------------------------------------------------------------------------
 st.markdown(
     """
@@ -18,22 +18,21 @@ st.markdown(
     }
 
     .stApp {
-        /* Mudamos para tons de azul muito mais fortes e ricos */
-        background: linear-gradient(-45deg, #003366, #005c8a, #0077b6, #023e8a);
+        /* Gradiente inspirado em tons de azul cerúleo e celeste brilhante */
+        background: linear-gradient(-45deg, #0077b6, #00b4d8, #48cae4, #90e0ef);
         background-size: 400% 400%;
-        /* Diminuímos para 10s para a mudança de cor ficar mais rápida e visível */
-        animation: fundoAnimado 10s ease infinite;
+        animation: fundoAnimado 12s ease infinite;
     }
 
-    /* Caixa central com fundo claro para garantir que a leitura fique perfeita */
+    /* Caixa central com fundo levemente translúcido para destacar o conteúdo */
     .main .block-container {
-        border: 2px solid #90e0ef;
+        border: 2px solid #ffffff;
         border-radius: 12px;
         padding: 2rem;
-        background-color: rgba(255, 255, 255, 0.92);
+        background-color: rgba(255, 255, 255, 0.95);
     }
 
-    /* Textos com um azul bem escuro (quase preto) para dar contraste máximo */
+    /* Letras com um tom escuro elegante para contrastar perfeitamente */
     h1, h2, h3, h4, h5, h6, p, span, label, div {
         color: #03045e !important;
     }
