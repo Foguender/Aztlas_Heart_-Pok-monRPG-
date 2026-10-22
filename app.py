@@ -58,7 +58,7 @@ def criar_badge_categoria(categoria):
 # -----------------------------------------------------------------------------
 def obter_caminho_banco():
     caminho_atual = os.path.dirname(__file__)
-    return os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
+    return os.path.join(caminho_atual, "Aztlas_Dex.db")
 
 
 def carregar_dados_pokemon():
@@ -67,7 +67,7 @@ def carregar_dados_pokemon():
         return pd.DataFrame()
 
     with sqlite3.connect(caminho_banco) as conn:
-        query = """SELECT * FROM pokemon"""
+        query = """SELECT * FROM Pokemon"""
         df = pd.read_sql_query(query, conn)
         return df
 
@@ -96,7 +96,7 @@ def buscar_detalhes_completos(pokemon_id):
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
         df_geral = carregar_tabela_segura(
-            conn, 'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,)
+            conn, 'SELECT * FROM Pokemon WHERE "ID" = ?', (pokemon_id,)
         )
         gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
