@@ -887,7 +887,7 @@ if st.session_state.modo_mestre:
 
       # Criamos um fragmento que roda a função de busca no banco a cada 3 segundos
       @st.fragment(run_every=3)
-      void_atualizar_rolagens():
+      def atualizar_rolagens():
         caminho_banco = obter_caminho_banco()
         with sqlite3.connect(caminho_banco) as conn:
           df_rolagens = carregar_tabela_segura(
@@ -905,9 +905,8 @@ if st.session_state.modo_mestre:
                 f" `{r['dado']}` 🕒 *({r['data_hora']})*"
             )
 
-
       # Chamamos o fragmento
-      void_atualizar_rolagens()
+      atualizar_rolagens()
 
       if st.button("🗑️ Limpar Histórico de Rolagens do Banco"):
         caminho_banco = obter_caminho_banco()
