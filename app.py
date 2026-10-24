@@ -379,8 +379,6 @@ with abas[0]:
         else []
     )
     tipos_disponiveis = sorted(list(set(col_t1) | set(col_t2)))
-    
-    # Linha corrigida com todos os parênteses fechados corretamente:
     filtro_tipo = st.sidebar.selectbox(
         "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
     )
@@ -404,3 +402,458 @@ with abas[0]:
           else False
       )
       df_filtrado = df_filtrado[cond1 | cond2]
+
+    if st.session_state.id_pokemon_selecionado is not None:
+      if st.button("⬅ Voltar para a Lista"):
+        st.session_state.id_pokemon_selecionado = None
+        st.rerun()
+
+      poke_geral, poke_desc, golpes, poke_evo, poke_loc = (
+          buscar_detalhes_completos(
+              int(st.session_state.id_pokemon_selecionado)
+          )
+      )
+
+      if poke_geral:
+        nome_p = poke_geral.get("Nome", "Pokémon")
+        dex_no = poke_geral.get("Dex No.", poke_geral.get("ID", ""))
+        st.title(f"{nome_p} #{dex_no}")
+
+        aba1, aba2, aba3, aba4, aba5, aba6 = st.tabs([
+            "📋 Dados Gerais",
+            "📊 Atributos & Stats RPG",
+            "🧬 Evoluções",
+            "🗺️ Localização & Spawn",
+            "🥚 Breeding & Training",
+            "⚔️ Golpes / Moves",
+        ])
+
+        with aba1:
+          col1, col2 = st.columns([1, 2])
+          with col1:
+            url_sprite = f"https://raw.githubusercontent.com/Foguender/Aztlas_Heart_-Pok-monRPG-/main/sprites/{poke_geral.get('ID')}.png"
+            st.image(url_sprite, caption=nome_p, width=200)
+          with col2:
+            st.subheader("Informações Biológicas")
+            if poke_desc and poke_desc[0]:
+              st.markdown(f"**Espécie:** {poke_desc[0]}")
+              st.markdown(f"*\"{poke_desc[1]}\"*")
+            st.write("---")
+            t1 = criar_badge_tipo(poke_geral.get("Tipo 1"))
+            t2 = criar_badge_tipo(poke_geral.get("Tipo 2"))
+            st.markdown(f"**Tipos:** {t1} {t2}", unsafe_allow_html=True)
+            st.markdown(
+                f"📏 **Tamanho:** {poke_geral.get('Tamanho', '—')} | 🎯"
+                f" **SR:** {poke_geral.get('SR', '—')}"
+            )
+            st.write("---")
+            st.subheader("✨ Habilidades")
+            hab1 = poke_geral.get("Habilidade 1", "Nenhuma")
+            hab2 = poke_geral.get("Habilidade 2", None)
+            hab_e = poke_geral.get("Habilidade E", None)
+            st.markdown(f"• **Habilidade 1:** `{hab1}`")
+            if hab2:
+              st.markdown(f"• **Habilidade 2:** `{hab2}`")
+            if hab_e:
+              st.markdown(f"• **Habilidade Oculta:** `{hab_e}`")
+
+        with aba2:
+          st.subheader("Atributos de RPG (Sistema D20)")
+          col_s1, col_s2, col_s3 = st.columns(3)
+          with col_s1:
+            st.metric("HP", poke_geral.get("HP", "—"))
+            st.metric("FOR", poke_geral.get("FOR", "—"))
+            st.metric("DES", poke_geral.get("DES", "—"))
+          with col_s2:
+            st.metric("CON", poke_geral.get("CON", "—"))
+            st.metric("INT", poke_geral.get("INT", "—"))
+            st.metric("SAB", poke_geral.get("SAB", "—"))
+          with col_s3:
+            st.metric("CAR", poke_geral.get("CAR", "—"))
+            st.metric("CA", poke_geral.get("CA", "—"))
+            st.metric("Hit Dice", poke_geral.get("Hit Dice", "—"))
+
+        with aba3:
+          st.subheader("Linhagem de Evolução")
+          if not poke_evo.empty:
+            st.dataframe(poke_evo, width=800, hide_index=True)
+          else:
+            st.info("Este Pokémon não possui evoluções registadas.")
+
+        with aba4:
+          st.subheader("Locais de Aparição em Aztlas")
+          if not poke_loc.empty:
+            st.dataframe(poke_loc, width=800, hide_index=True)
+          else:
+            st.info("Sem locais de aparição cadastrados.")
+
+        with aba5:
+          st.subheader("Dados de Cruzamento e Treinamento")
+          st.markdown(
+              "**Grupo de Ovos 1:**"
+              f" {poke_geral.get('Grupo de Ovos 1', '—')}"
+          )
+          st.markdown(
+              "**Grupo de Ovos 2:**"
+              f" {poke_geral.get('Grupo de Ovos 2', '—')}"
+          )
+          st.markdown(
+              "**Taxa de Género M:**"
+              f" {poke_geral.get('Tx. Genero M', '—')}%"
+          )
+          st.markdown(
+              "**Taxa de Género F:**"
+              f" {poke_geral.get('Tx. Genero F', '—')}%"
+          )
+
+        with aba6:
+          st.subheader("⚔️ Movimentos e Golpes Aprendidos")
+          tab_learn, tab_tm, tab_egg, tab_teacher = st.tabs(
+              ["📜 Por Nível", "CDs / TMs & HMs", "🥚 Egg Moves", "👨‍🏫 Teacher Moves"]
+          )
+
+          def renderizar_tabela_pokemondb(df_golpes, coluna_nivel=None):
+            if df_golpes.empty:
+              st.info("Nenhum movimento registrado nesta categoria.")
+              return
+            df = df_golpes.copy()
+            df_exibicao = pd.DataFrame()
+            if coluna_nivel and coluna_nivel in df.columns:
+              df_exibicao["Nível"] = df[coluna_nivel].apply(
+                  lambda x: f"Lvl {x}" if pd.notnull(x) else "1"
+              )
+            if "Golpe_Nome" in df.columns:
+              df_exibicao["Golpe"] = df["Golpe_Nome"].apply(
+                  lambda x: f"<b>{x}</b>"
+              )
+            elif "Nome" in df.columns:
+              df_exibicao["Golpe"] = df["Nome"].apply(
+                  lambda x: f"<b>{x}</b>"
+              )
+            elif "Move" in df.columns:
+              df_exibicao["Golpe"] = df["Move"].apply(
+                  lambda x: f"<b>{x}</b>"
+              )
+            if "Tipo" in df.columns:
+              df_exibicao["Tipo"] = df["Tipo"].apply(criar_badge_tipo)
+            if "Categoria" in df.columns:
+              df_exibicao["Classe"] = df["Categoria"].apply(
+                  lambda x: (
+                      '🔴 <span style="color:#e05244; font-weight:bold;">Físico</span>'
+                      if "fís" in str(x).lower() or "fis" in str(x).lower()
+                      else (
+                          '🔵 <span style="color:#4a90e2;'
+                          ' font-weight:bold;">Especial</span>'
+                          if "esp" in str(x).lower()
+                          else '⚪ <span style="color:#8e8e93;'
+                          ' font-weight:bold;">Status</span>'
+                      )
+                  )
+              )
+            if "Poder" in df.columns:
+              df_exibicao["Poder"] = df["Poder"].apply(
+                  lambda x: (
+                      str(x) if pd.notnull(x) and str(x) != "0" else "—"
+                  )
+              )
+            if "Precisao" in df.columns:
+              df_exibicao["Precisão"] = df["Precisao"].apply(
+                  lambda x: f"{x}%" if pd.notnull(x) else "—"
+              )
+            elif "Accuracy" in df.columns:
+              df_exibicao["Precisão"] = df["Accuracy"].apply(
+                  lambda x: f"{x}%" if pd.notnull(x) else "—"
+              )
+            if "PP" in df.columns:
+              df_exibicao["PP"] = df["PP"]
+            if "Efeito" in df.columns:
+              df_exibicao["Efeito / Descrição"] = df["Efeito"]
+            st.write(
+                df_exibicao.to_html(escape=False, index=False),
+                unsafe_allow_html=True,
+            )
+
+          with tab_learn:
+            renderizar_tabela_pokemondb(golpes["learnset"], coluna_nivel="Level")
+          with tab_tm:
+            renderizar_tabela_pokemondb(golpes["tm"])
+          with tab_egg:
+            renderizar_tabela_pokemondb(golpes["egg"])
+          with tab_teacher:
+            renderizar_tabela_pokemondb(golpes["teacher"])
+
+    else:
+      st.title("PokéDex Completa")
+      evento_selecao = st.dataframe(
+          df_filtrado.fillna("-"),
+          width=1000,
+          hide_index=True,
+          on_select="rerun",
+          selection_mode="single-row",
+      )
+      if (
+          evento_selecao
+          and "selection" in evento_selecao
+          and evento_selecao["selection"]["rows"]
+      ):
+        idx = evento_selecao["selection"]["rows"][0]
+        st.session_state.id_pokemon_selecionado = df_filtrado.iloc[idx]["ID"]
+        st.rerun()
+
+
+# ==============================================================================
+# ABA 2: COMPÊNDIO DE HABILIDADES
+# ==============================================================================
+with abas[1]:
+  st.title("✨ Compêndio de Habilidades (Abilities)")
+  st.markdown("Consulte os efeitos passivos e mecânicas das habilidades.")
+  df_hab = carregar_dados_habilidades()
+  if df_hab.empty:
+    st.warning("Nenhuma tabela de habilidades encontrada.")
+  else:
+    filtro_hab = st.text_input("🔍 Buscar Habilidade:", "")
+    df_hab_filtradas = df_hab.copy()
+    if filtro_hab:
+      condicoes = pd.Series([False] * len(df_hab_filtradas))
+      for col in df_hab_filtradas.columns:
+        condicoes = condicoes | (
+            df_hab_filtradas[col]
+            .astype(str)
+            .str.contains(filtro_hab, case=False, na=False)
+        )
+      df_hab_filtradas = df_hab_filtradas[condicoes]
+
+    vis_hab = st.radio(
+        "Modo de Visualização:",
+        ["📋 Fichas Detalhadas", "📊 Tabela Geral"],
+        horizontal=True,
+    )
+    if vis_hab == "📋 Fichas Detalhadas":
+      for _, hab in df_hab_filtradas.iterrows():
+        nome_h = hab.get("Nome", hab.get("ID", "Habilidade"))
+        efeito_h = hab.get("Efeito", "")
+        desc_h = hab.get("Descrição", "")
+        with st.expander(f"✨ **{nome_h}**"):
+          if (
+              pd.notnull(efeito_h)
+              and str(efeito_h).strip() not in ["", "-", "None"]
+          ):
+            st.info(f"⚡ **Efeito:** {efeito_h}")
+          if (
+              pd.notnull(desc_h)
+              and str(desc_h).strip() not in ["", "-", "None"]
+          ):
+            st.markdown(f"**Descrição:**\n{desc_h}")
+    else:
+      st.dataframe(df_hab_filtradas.fillna("-"), width=1000, hide_index=True)
+
+
+# ==============================================================================
+# ABA 3: COMPÊNDIO DE ITENS
+# ==============================================================================
+with abas[2]:
+  st.title("🎒 Compêndio de Itens & Equipamentos")
+  df_itens = carregar_dados_itens()
+  if df_itens.empty:
+    st.warning("Nenhum item encontrado.")
+  else:
+    st.sidebar.markdown("---")
+    st.sidebar.header("🎒 Filtros do Inventário")
+    filtro_item_nome = st.sidebar.text_input("Buscar Item:", "")
+    tipos_itens = (
+        ["Todos"] + sorted(list(df_itens["Tipo"].dropna().unique()))
+        if "Tipo" in df_itens.columns
+        else ["Todos"]
+    )
+    filtro_item_tipo = st.sidebar.selectbox("Filtrar por Tipo:", tipos_itens)
+
+    df_itens_filtrados = df_itens.copy()
+    if filtro_item_nome and "Nome" in df_itens_filtrados.columns:
+      df_itens_filtrados = df_itens_filtrados[
+          df_itens_filtrados["Nome"].str.contains(
+              filtro_item_nome, case=False, na=False
+          )
+      ]
+    if filtro_item_tipo != "Todos" and "Tipo" in df_itens_filtrados.columns:
+      df_itens_filtrados = df_itens_filtrados[
+          df_itens_filtrados["Tipo"] == filtro_item_tipo
+      ]
+
+
+    def processar_exibicao_preco(row):
+      preco_raw = row.get("Preço", None)
+      try:
+        if pd.isnull(preco_raw) or preco_raw is None:
+          return "Inestimável", ""
+        preco_original = float(preco_raw)
+      except (ValueError, TypeError):
+        return "Inestimável", ""
+      if preco_original == 0:
+        return "Grátis", ""
+      if not st.session_state.modo_mestre:
+        return f"₽ {preco_original:,.2f}", ""
+      tipo_item = row.get("Tipo", "")
+      mod = st.session_state.modificadores_preco.get(tipo_item, 1.0)
+      preco_final = preco_original * mod
+      pct = int(abs(mod - 1.0) * 100)
+      status = (
+          f"📈 +{pct}% (Alta)"
+          if mod > 1.0
+          else (f"📉 -{pct}% (Desconto)" if mod < 1.0 else "⚖️ Base")
+      )
+      return f"₽ {preco_final:,.2f}", status
+
+
+    visualizacao = st.radio(
+        "Visualização:",
+        ["📋 Fichas Detalhadas", "📊 Tabela Geral"],
+        horizontal=True,
+    )
+    if visualizacao == "📋 Fichas Detalhadas":
+      for _, item in df_itens_filtrados.iterrows():
+        preco_txt, status_preco = processar_exibicao_preco(item)
+        titulo_expander = (
+            f"📦 **{item.get('Nome', 'Item')}** — *{item.get('Tipo', '')}* |"
+            f" 💰 **{preco_txt}**"
+        )
+        if st.session_state.modo_mestre and status_preco:
+          titulo_expander += f" ({status_preco})"
+        with st.expander(titulo_expander):
+          col_e1, col_e2 = st.columns([1, 2])
+          with col_e1:
+            st.markdown(f"**Categoria:** `{item.get('Tipo', '—')}`")
+            st.markdown(f"**Preço:** {preco_txt}")
+            efeito = item.get("Efeito", None)
+            if pd.notnull(efeito) and str(efeito).strip() != "":
+              st.info(f"⚡ **Efeito:** {efeito}")
+          with col_e2:
+            st.markdown("**Descrição / Lore:**")
+            st.write(item.get("Descricao", "Sem descrição."))
+    else:
+      df_exibicao = df_itens_filtrados.copy()
+      df_exibicao["Preço"] = df_exibicao.apply(
+          lambda r: processar_exibicao_preco(r)[0], axis=1
+      )
+      if st.session_state.modo_mestre:
+        df_exibicao["Status Mercado"] = df_exibicao.apply(
+            lambda r: processar_exibicao_preco(r)[1], axis=1
+        )
+      st.dataframe(df_exibicao.fillna("-"), width=1000, hide_index=True)
+
+
+# ==============================================================================
+# ABA 4: ESCUDO DO MESTRE
+# ==============================================================================
+if st.session_state.modo_mestre:
+  with abas[3]:
+    st.title("🧙‍♂️ Escudo do Mestre")
+    sub_mercado, sub_roleplay, sub_clima_dados, sub_regras = st.tabs(
+        [
+            "🎲 Mercado",
+            "🎭 Roleplay & Improv",
+            "🌤️ Clima & Dados da Mesa",
+            "📜 Regras Rápidas",
+        ]
+    )
+    df_itens = carregar_dados_itens()
+    categorias_existentes = (
+        sorted(list(df_itens["Tipo"].dropna().unique()))
+        if not df_itens.empty and "Tipo" in df_itens.columns
+        else []
+    )
+
+    with sub_mercado:
+      col_btn1, col_btn2 = st.columns(2)
+      with col_btn1:
+        if st.button("🎲 Girar Mercado", type="primary"):
+          st.session_state.modificadores_preco = gerar_flutuacao_automatica(
+              categorias_existentes
+          )
+          st.success("Mercado atualizado!")
+          st.rerun()
+      with col_btn2:
+        if st.button("🔄 Resetar Preços"):
+          st.session_state.modificadores_preco = {
+              cat: 1.0 for cat in categorias_existentes
+          }
+          st.info("Preços restaurados.")
+          st.rerun()
+      for cat in categorias_existentes:
+        mod = st.session_state.modificadores_preco.get(cat, 1.0)
+        pct = int((mod - 1.0) * 100)
+        st.write(f"• **{cat}**: Modificador de {mod}x ({pct}%)")
+
+    with sub_roleplay:
+      st.markdown("### 🎲 Eventos Aleatórios")
+      if st.button("🔮 Sortear Evento"):
+        st.info("Um clima repentino alterou as condições da rota!")
+
+    with sub_clima_dados:
+      st.subheader("🌤️ Gerador de Clima por Estação")
+      estacao_escolhida = st.selectbox(
+          "Selecione a Estação do Ano em Aztlas:",
+          ["Primavera", "Verão", "Outono", "Inverno"],
+      )
+
+      if st.button("🎲 Rolar Clima para esta Estação"):
+        climas_por_estacao = {
+            "Primavera": [
+                "Chuva leve e revigorante",
+                "Manhã ensolarada com brisa",
+                "Temporal passageiro",
+                "Névoa matinal densa",
+            ],
+            "Verão": [
+                "Sol escaldante e céu limpo",
+                "Calor abafado com trovoada à tarde",
+                "Onda de calor extremo",
+                "Brisa seca",
+            ],
+            "Outono": [
+                "Vento forte e folhas ao chão",
+                "Chuva persistente e fria",
+                "Céu nublado e cinzento",
+                "Geada leve ao amanhecer",
+            ],
+            "Inverno": [
+                "Nevasca rigorosa",
+                "Frio congelante com céu aberto",
+                "Geada profunda",
+                "Tempestade de granizo",
+            ],
+        }
+        clima_sorteado = random.choice(climas_por_estacao[estacao_escolhida])
+        st.success(
+            f"🌿 **Estação:** {estacao_escolhida} | 🌡️ **Clima Atual Sorteado:**"
+            f" `{clima_sorteado}`"
+        )
+
+      st.markdown("---")
+      st.subheader("👁️ Monitor de Rolagens dos Jogadores (Público)")
+      st.markdown(
+          "Aqui acompanha em tempo real todos os dados que os jogadores mandam a"
+          " rolar na mesa:"
+      )
+
+      if not st.session_state.historico_rolagens:
+        st.info("Ainda nenhuma rolagem efetuada pelos jogadores nesta sessão.")
+      else:
+        for r in st.session_state.historico_rolagens[:10]:
+          st.markdown(
+              f"• **{r['jogador']}** tirou **{r['resultado']}** no `{r['dado']}`"
+          )
+
+        if st.button("🗑️ Limpar Histórico de Rolagens"):
+          st.session_state.historico_rolagens = []
+          st.rerun()
+
+    with sub_regras:
+      st.markdown("### 📜 Regras do Sistema")
+      caminho_regras = os.path.join(
+          os.path.dirname(__file__), "regras_mestre.md"
+      )
+      if os.path.exists(caminho_regras):
+        with open(caminho_regras, "r", encoding="utf-8") as f:
+          st.markdown(f.read())
+      else:
+        st.info("Arquivo `regras_mestre.md` não encontrado.")
