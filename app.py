@@ -125,10 +125,11 @@ def obter_caminho_banco():
   return os.path.join(caminho_atual, "Aztlas_Dex.db")
 
 
-def inicializar_tabela_rolagens():
+def inicializar_tabelas_extras():
   caminho_banco = obter_caminho_banco()
   with sqlite3.connect(caminho_banco) as conn:
     cursor = conn.cursor()
+    # Tabela para rolagens
     cursor.execute("""
             CREATE TABLE IF NOT EXISTS Historico_Rolagens_Mesa (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,10 +139,17 @@ def inicializar_tabela_rolagens():
                 data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+    # Tabela para notas do Mestre (salvas no banco para não perder nunca)
+    cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Notas_Mestre (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conteudo TEXT
+            )
+        """)
     conn.commit()
 
 
-inicializar_tabela_rolagens()
+inicializar_tabelas_extras()
 
 
 def carregar_dados_pokemon():
@@ -163,10 +171,6 @@ def carregar_tabela_segura(conn, query, params=()):
 
 
 def calcular_defesa_tipos(tipo1, tipo2):
-  """Calcula os multiplicadores de dano recebido para os 18 tipos
-
-  com base na tabela Eficacia_Tipos do banco de dados.
-  """
   caminho_banco = obter_caminho_banco()
   tipos_oficiais = [
       "Normal",
@@ -198,13 +202,10 @@ def calcular_defesa_tipos(tipo1, tipo2):
     if df_eficacia.empty:
       return multiplicadores
 
-    # Tenta cruzar os dados da tabela de eficácia
-    # Supondo colunas padrão de matriz de tipos (Atacante vs Defensor)
     for t_atk in tipos_oficiais:
       mult_t1 = 1.0
       mult_t2 = 1.0
       try:
-        # Lógica genérica de busca na tabela de eficácia se houver formato matricial ou relacional
         if "Atacante" in df_eficacia.columns and "Defensor" in df_eficacia.columns:
           if tipo1 and pd.notnull(tipo1):
             r1 = df_eficacia[
@@ -226,9 +227,6 @@ def calcular_defesa_tipos(tipo1, tipo2):
             ]
             if not r2.empty:
               mult_t2 = float(r2.iloc[0]["Multiplicador"])
-        elif t_atk in df_eficacia.columns:
-          # Se a tabela usa os tipos como colunas
-          pass
       except Exception:
         pass
 
@@ -396,6 +394,9 @@ if "modificadores_preco" not in st.session_state:
 if "id_pokemon_selecionado" not in st.session_state:
   st.session_state.id_pokemon_selecionado = None
 
+if "lista_iniciativa" not in st.session_state:
+  st.session_state.lista_iniciativa = []
+
 
 def gerar_flutuacao_automatica(categorias):
   novos_modificadores = {}
@@ -446,7 +447,7 @@ if st.sidebar.button("Rolar Dado Publicamente"):
 st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 4. ESTRUTURA DE ABAS PRINCIPAIS (Removida a aba antiga de eficácia e integrada na ficha)
+# 4. ESTRUTURA DE ABAS PRINCIPAIS
 # -----------------------------------------------------------------------------
 abas_disponiveis = [
     "🐾 Pokédex Regional",
@@ -577,23 +578,16 @@ with abas[0]:
               " Pokémon DB):"
           )
 
-          # Calcula a tabela de defesa para este Pokémon específico
           defesas = calcular_defesa_tipos(
               poke_geral.get("Tipo 1"), poke_geral.get("Tipo 2")
           )
 
-          # Renderiza os 18 tipos em colunas estilo badges com seus multiplicadores
           cols_tipos = st.columns(6)
           idx_col = 0
           for tipo_nome, mult in defesas.items():
             with cols_tipos[idx_col % 6]:
               badge_html = criar_badge_tipo(tipo_nome)
-              # Formata o multiplicador com cor de destaque se for fraqueza ou resistência
-              mult_str = (
-                  f"×{mult:g}"
-                  if mult != 1
-                  else "—"  # Formata 2.0 para 2, 0.5 para 0.5, etc.
-              )
+              mult_str = f"×{mult:g}" if mult != 1 else "—"
               cor_mult = (
                   "#e05244"
                   if mult > 1
@@ -610,7 +604,7 @@ with abas[0]:
 
         with aba2:
           st.subheader("Atributos de RPG (Sistema D20 / Poké5e & PTU)")
-          col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+          col_s1, col_s2, col_s3 = st.columns(3)
           with col_s1:
             st.metric("HP", poke_geral.get("HP", "—"))
             st.metric("FOR", poke_geral.get("FOR", "—"))
@@ -623,11 +617,19 @@ with abas[0]:
             st.metric("CAR", poke_geral.get("CAR", "—"))
             st.metric("CA", poke_geral.get("CA", "—"))
             st.metric("Hit Dice", poke_geral.get("Hit Dice", "—"))
-          with col_s4:
-            deslocamento_val = poke_geral.get(
-                "Deslocamento", poke_geral.get("Movimento", "9m (6 sq)")
-            )
-            st.metric("🏃 Deslocamento", deslocamento_val)
+
+          st.write("")
+          # --- Ajuste do Deslocamento em campo aberto para caber textos longos ---
+          deslocamento_val = poke_geral.get(
+              "Deslocamento", poke_geral.get("Movimento", "9m (30ft)")
+          )
+          st.markdown(
+              f"""<div style="background-color: #f0f8ff; border: 1px solid #48cae4; border-radius: 8px; padding: 12px; margin-top: 10px;">
+                <span style="font-size: 14px; font-weight: bold; color: #03045e;">🏃 Deslocamento:</span><br>
+                <span style="font-size: 16px; color: #0077b6; font-weight: bold;">{deslocamento_val}</span>
+            </div>""",
+              unsafe_allow_html=True,
+          )
 
           st.write("---")
           st.subheader("🎯 Perícias (Skills)")
@@ -905,16 +907,18 @@ with abas[2]:
 
 
 # ==============================================================================
-# ABA 4: ESCUDO DO MESTRE (Se ativo)
+# ABA 4: ESCUDO DO MESTRE (Com Notas e Iniciativa)
 # ==============================================================================
 if st.session_state.modo_mestre:
   with abas[3]:
     st.title("🧙‍♂️ Escudo do Mestre")
-    sub_mercado, sub_roleplay, sub_clima_dados, sub_regras = st.tabs(
+    sub_mercado, sub_roleplay, sub_clima_dados, sub_iniciativa, sub_notas, sub_regras = st.tabs(
         [
             "🎲 Mercado",
             "🎭 Roleplay & Improv",
             "🌤️ Clima & Dados da Mesa",
+            "⚔️ Tracker de Iniciativa",
+            "📝 Bloco de Notas",
             "📜 Regras Rápidas",
         ]
     )
@@ -1027,6 +1031,80 @@ if st.session_state.modo_mestre:
           conn.commit()
         st.success("Histórico limpo com sucesso!")
         st.rerun()
+
+    # --- NOVO: TRACKER DE INICIATIVA ---
+    with sub_iniciativa:
+      st.subheader("⚔️ Gerenciador de Iniciativa")
+      col_i1, col_i2 = st.columns([2, 1])
+      with col_i1:
+        nome_combatente = st.text_input("Nome do Pokémon / Jogador / NPC:")
+      with col_i2:
+        valor_init = st.number_input(
+            "Valor de Iniciativa:", min_value=1, max_value=100, value=10
+        )
+
+      if st.button("➕ Adicionar à Ordem"):
+        if nome_combatente:
+          st.session_state.lista_iniciativa.append(
+              {"nome": nome_combatente, "init": valor_init}
+          )
+          # Ordena de forma decrescente (maior iniciativa primeiro)
+          st.session_state.lista_iniciativa = sorted(
+              st.session_state.lista_iniciativa,
+              key=lambda x: x["init"],
+              reverse=True,
+          )
+          st.success(f"Adicionado: {nome_combatente} ({valor_init})")
+          st.rerun()
+
+      st.markdown("---")
+      if not st.session_state.lista_iniciativa:
+        st.info("Nenhum combatente na iniciativa no momento.")
+      else:
+        st.markdown("**Ordem de Turnos:**")
+        for i, comb in enumerate(st.session_state.lista_iniciativa):
+          col_a, col_b = st.columns([4, 1])
+          with col_a:
+            st.markdown(
+                f"**{i+1}.** `{comb['nome']}` — **Iniciativa:** {comb['init']}"
+            )
+          with col_b:
+            if st.button("❌", key=f"del_init_{i}"):
+              st.session_state.lista_iniciativa.pop(i)
+              st.rerun()
+
+        if st.button("🧹 Limpar Combate Inteiro"):
+          st.session_state.lista_iniciativa = []
+          st.rerun()
+
+    # --- NOVO: BLOCO DE NOTAS DO MESTRE ---
+    with sub_notas:
+      st.subheader("📝 Bloco de Notas para Próximas Sessões")
+      st.markdown(
+          "Escreve aqui os teus ganchos de enredo, segredos e ideias. As notas"
+          " ficam guardadas no banco de dados!"
+      )
+
+      caminho_banco = obter_caminho_banco()
+      with sqlite3.connect(caminho_banco) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT conteudo FROM Notas_Mestre ORDER BY id DESC LIMIT 1")
+        row = cursor.fetchone()
+        nota_atual = row[0] if row else ""
+
+      nova_nota = st.text_area(
+          "Anotações do Mestre:", value=nota_atual, height=300
+      )
+
+      if st.button("💾 Salvar Notas no Banco", type="primary"):
+        with sqlite3.connect(caminho_banco) as conn:
+          cursor = conn.cursor()
+          cursor.execute("DELETE FROM Notas_Mestre")  # Mantém a última versão atualizada
+          cursor.execute(
+              "INSERT INTO Notas_Mestre (conteudo) VALUES (?)", (nova_nota,)
+          )
+          conn.commit()
+        st.success("Notas guardadas com sucesso!")
 
     with sub_regras:
       st.markdown("### 📜 Regras do Sistema")
