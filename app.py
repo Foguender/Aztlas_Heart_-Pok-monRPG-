@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 # -----------------------------------------------------------------------------
-# CONFIGURAÇÃO DA PÁGINA & ESTILO (TEMA AZUL CERÚLEO + ANIMAÇÃO DE CLIQUE)
+# CONFIGURAÇÃO DA PÁGINA & ESTILO (TEMA AZUL CERÚLEO)
 # -----------------------------------------------------------------------------
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
@@ -66,35 +66,7 @@ st.markdown(
     [data-testid="stSidebar"] [data-baseweb="select"] span {
         color: #03045e !important;
     }
-
-    /* --- ONDA DE CLIQUE DA POKÉDEX --- */
-    .onda-pokedex {
-        position: fixed;
-        border: 2px solid rgba(255, 255, 255, 0.9);
-        border-radius: 50%;
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        animation: expandirOnda 0.6s ease-out forwards;
-        z-index: 999999;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-    }
-
-    @keyframes expandirOnda {
-        0% { width: 0px; height: 0px; opacity: 1; }
-        100% { width: 150px; height: 150px; opacity: 0; border-width: 1px; }
-    }
     </style>
-
-    <script>
-    document.addEventListener('click', function(e) {
-        const onda = document.createElement('div');
-        onda.className = 'onda-pokedex';
-        onda.style.left = e.clientX + 'px';
-        onda.style.top = e.clientY + 'px';
-        document.body.appendChild(onda);
-        setTimeout(() => { onda.remove(); }, 600);
-    });
-    </script>
     """,
     unsafe_allow_html=True,
 )
@@ -176,13 +148,11 @@ def carregar_tabela_segura(conn, query, params=()):
 def buscar_detalhes_completos(pokemon_id):
   caminho_banco = obter_caminho_banco()
   with sqlite3.connect(caminho_banco) as conn:
-    # 1. Dados gerais, stats e breeding (Tudo vem direto da tabela Pokemon!)
     df_geral = carregar_tabela_segura(
         conn, 'SELECT * FROM Pokemon WHERE "ID" = ?', (pokemon_id,)
     )
     gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
-    # 2. Descrição (se houver tabela de descrições)
     try:
       cursor = conn.cursor()
       cursor.execute(
@@ -194,7 +164,6 @@ def buscar_detalhes_completos(pokemon_id):
     except Exception:
       descricao = ("Sem espécie", "Sem descrição disponível.")
 
-    # 3. Golpes
     pokemon_nome = gerais.get("Nome", "")
     learnset_df = carregar_tabela_segura(
         conn,
@@ -224,7 +193,6 @@ def buscar_detalhes_completos(pokemon_id):
         (pokemon_id, pokemon_id),
     )
 
-    # 4. Evoluções
     query_evo = """
         SELECT 
         p1.Nome AS [Forma Inicial], 
@@ -251,7 +219,6 @@ def buscar_detalhes_completos(pokemon_id):
           conn, query_evo_alt, (pokemon_id, pokemon_id)
       )
 
-    # 5. Localização
     loc_df = pd.DataFrame()
     for nome_tabela in ["Spawn_Pokemon", "Locations_Pok mon", "Locations_Pokémon"]:
       try:
