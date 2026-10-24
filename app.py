@@ -127,6 +127,25 @@ def obter_caminho_banco():
   return os.path.join(caminho_atual, "Aztlas_Dex.db")
 
 
+def inicializar_tabela_rolagens():
+  caminho_banco = obter_caminho_banco()
+  with sqlite3.connect(caminho_banco) as conn:
+    cursor = conn.cursor()
+    cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Historico_Rolagens_Mesa (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                jogador TEXT,
+                dado TEXT,
+                resultado INTEGER,
+                data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+    conn.commit()
+
+
+inicializar_tabela_rolagens()
+
+
 def carregar_dados_pokemon():
   caminho_banco = obter_caminho_banco()
   if not os.path.exists(caminho_banco):
@@ -280,6 +299,16 @@ def carregar_dados_itens():
     return df_itens
 
 
+def carregar_eficiencia_tipos():
+  caminho_banco = obter_caminho_banco()
+  if not os.path.exists(caminho_banco):
+    return pd.DataFrame()
+
+  with sqlite3.connect(caminho_banco) as conn:
+    df = carregar_tabela_segura(conn, 'SELECT * FROM "Eficacia_Tipos"')
+    return df
+
+
 # -----------------------------------------------------------------------------
 # 2. ESTADOS DE SESSÃO
 # -----------------------------------------------------------------------------
@@ -292,9 +321,6 @@ if "modificadores_preco" not in st.session_state:
 if "id_pokemon_selecionado" not in st.session_state:
   st.session_state.id_pokemon_selecionado = None
 
-if "historico_rolagens" not in st.session_state:
-  st.session_state.historico_rolagens = []
-
 
 def gerar_flutuacao_automatica(categorias):
   novos_modificadores = {}
@@ -305,7 +331,7 @@ def gerar_flutuacao_automatica(categorias):
 
 
 # -----------------------------------------------------------------------------
-# 3. BARRA LATERAL (LOGIN DO MESTRE & ROLAGEM PÚBLICA DE DADOS)
+# 3. BARRA LATERAL (LOGIN DO MESTRE & ROLAGEM PÚBLICA DE DADOS VIA BANCO)
 # -----------------------------------------------------------------------------
 st.sidebar.title("Pocket & Monsters RPG")
 st.sidebar.markdown("---")
@@ -329,9 +355,16 @@ if st.sidebar.button("Rolar Dado Publicamente"):
     st.sidebar.warning("Insira o seu nome primeiro!")
   else:
     resultado = random.randint(1, faces_dado)
-    st.session_state.historico_rolagens.insert(
-        0, {"jogador": jogador_nome, "dado": f"D{faces_dado}", "resultado": resultado}
-    )
+    # Grava diretamente no banco de dados para sincronizar à distância!
+    caminho_banco = obter_caminho_banco()
+    with sqlite3.connect(caminho_banco) as conn:
+      cursor = conn.cursor()
+      cursor.execute(
+          "INSERT INTO Historico_Rolagens_Mesa (jogador, dado, resultado)"
+          " VALUES (?, ?, ?)",
+          (jogador_nome, f"D{faces_dado}", resultado),
+      )
+      conn.commit()
     st.sidebar.success(
         f"🎲 {jogador_nome} rolou um D{faces_dado} e tirou: **{resultado}**!"
     )
@@ -345,6 +378,7 @@ abas_disponiveis = [
     "🐾 Pokédex Regional",
     "✨ Compêndio de Habilidades",
     "🎒 Compêndio de Itens",
+    "🛡️ Eficácia de Tipos",
 ]
 
 if st.session_state.modo_mestre:
@@ -742,10 +776,25 @@ with abas[2]:
 
 
 # ==============================================================================
-# ABA 4: ESCUDO DO MESTRE
+# ABA 4: EFICÁCIA DE TIPOS
+# ==============================================================================
+with abas[3]:
+  st.title("🛡️ Tabela de Eficácia de Tipos")
+  st.markdown(
+      "Consulte os multiplicadores de dano entre os diferentes tipos elementares."
+  )
+  df_eficacia = carregar_eficiencia_tipos()
+  if df_eficacia.empty:
+    st.warning("A tabela 'Eficacia_Tipos' não foi encontrada no banco de dados.")
+  else:
+    st.dataframe(df_eficacia.fillna("-"), width=1000, hide_index=True)
+
+
+# ==============================================================================
+# ABA 5: ESCUDO DO MESTRE
 # ==============================================================================
 if st.session_state.modo_mestre:
-  with abas[3]:
+  with abas[4]:
     st.title("🧙‍♂️ Escudo do Mestre")
     sub_mercado, sub_roleplay, sub_clima_dados, sub_regras = st.tabs(
         [
@@ -829,22 +878,36 @@ if st.session_state.modo_mestre:
         )
 
       st.markdown("---")
-      st.subheader("👁️ Monitor de Rolagens dos Jogadores (Público)")
+      st.subheader("👁️ Monitor de Rolagens dos Jogadores (À Distância)")
       st.markdown(
-          "Aqui acompanha em tempo real todos os dados que os jogadores mandam a"
-          " rolar na mesa:"
+          "Aqui são exibidas em tempo real todas as rolagens feitas pelos"
+          " jogadores a partir dos dispositivos deles:"
       )
 
-      if not st.session_state.historico_rolagens:
-        st.info("Ainda nenhuma rolagem efetuada pelos jogadores nesta sessão.")
+      # Lê o histórico diretamente da tabela do SQLite para sincronizar à distância!
+      caminho_banco = obter_caminho_banco()
+      with sqlite3.connect(caminho_banco) as conn:
+        df_rolagens = carregar_tabela_segura(
+            conn,
+            "SELECT jogador, dado, resultado, data_hora FROM"
+            " Historico_Rolagens_Mesa ORDER BY id DESC LIMIT 15",
+        )
+
+      if df_rolagens.empty:
+        st.info("Ainda nenhuma rolagem registada na mesa.")
       else:
-        for r in st.session_state.historico_rolagens[:10]:
+        for _, r in df_rolagens.iterrows():
           st.markdown(
               f"• **{r['jogador']}** tirou **{r['resultado']}** no `{r['dado']}`"
+              f" *({r['data_hora']})*"
           )
 
-        if st.button("🗑️ Limpar Histórico de Rolagens"):
-          st.session_state.historico_rolagens = []
+        if st.button("🗑️ Limpar Histórico de Rolagens do Banco"):
+          with sqlite3.connect(caminho_banco) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM Historico_Rolagens_Mesa")
+            conn.commit()
+          st.success("Histórico limpo com sucesso!")
           st.rerun()
 
     with sub_regras:
