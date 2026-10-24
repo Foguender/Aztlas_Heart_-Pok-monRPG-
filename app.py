@@ -880,35 +880,43 @@ if st.session_state.modo_mestre:
       st.markdown("---")
       st.subheader("👁️ Monitor de Rolagens dos Jogadores (À Distância)")
       st.markdown(
-          "Aqui são exibidas em tempo real todas as rolagens feitas pelos"
-          " jogadores a partir dos dispositivos deles:"
+          "As rolagens dos jogadores aparecem aqui automaticamente em tempo"
+          " real:"
       )
 
-      # Lê o histórico diretamente da tabela do SQLite para sincronizar à distância!
-      caminho_banco = obter_caminho_banco()
-      with sqlite3.connect(caminho_banco) as conn:
-        df_rolagens = carregar_tabela_segura(
-            conn,
-            "SELECT jogador, dado, resultado, data_hora FROM"
-            " Historico_Rolagens_Mesa ORDER BY id DESC LIMIT 15",
-        )
 
-      if df_rolagens.empty:
-        st.info("Ainda nenhuma rolagem registada na mesa.")
-      else:
-        for _, r in df_rolagens.iterrows():
-          st.markdown(
-              f"• **{r['jogador']}** tirou **{r['resultado']}** no `{r['dado']}`"
-              f" *({r['data_hora']})*"
+      # Criamos um fragmento que roda a função de busca no banco a cada 3 segundos
+      @st.fragment(run_every=3)
+      void_atualizar_rolagens():
+        caminho_banco = obter_caminho_banco()
+        with sqlite3.connect(caminho_banco) as conn:
+          df_rolagens = carregar_tabela_segura(
+              conn,
+              "SELECT jogador, dado, resultado, data_hora FROM"
+              " Historico_Rolagens_Mesa ORDER BY id DESC LIMIT 10",
           )
 
-        if st.button("🗑️ Limpar Histórico de Rolagens do Banco"):
-          with sqlite3.connect(caminho_banco) as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM Historico_Rolagens_Mesa")
-            conn.commit()
-          st.success("Histórico limpo com sucesso!")
-          st.rerun()
+        if df_rolagens.empty:
+          st.info("A aguardar rolagens dos jogadores...")
+        else:
+          for _, r in df_rolagens.iterrows():
+            st.markdown(
+                f"• **{r['jogador']}** tirou **{r['resultado']}** no"
+                f" `{r['dado']}` 🕒 *({r['data_hora']})*"
+            )
+
+
+      # Chamamos o fragmento
+      void_atualizar_rolagens()
+
+      if st.button("🗑️ Limpar Histórico de Rolagens do Banco"):
+        caminho_banco = obter_caminho_banco()
+        with sqlite3.connect(caminho_banco) as conn:
+          cursor = conn.cursor()
+          cursor.execute("DELETE FROM Historico_Rolagens_Mesa")
+          conn.commit()
+        st.success("Histórico limpo com sucesso!")
+        st.rerun()
 
     with sub_regras:
       st.markdown("### 📜 Regras do Sistema")
