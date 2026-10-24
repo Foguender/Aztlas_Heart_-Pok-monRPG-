@@ -379,6 +379,28 @@ with abas[0]:
         else []
     )
     tipos_disponiveis = sorted(list(set(col_t1) | set(col_t2)))
+    
+    # Linha corrigida com todos os parênteses fechados corretamente:
     filtro_tipo = st.sidebar.selectbox(
-        "Filtrar por Tipo:", ["Todos"] + tipos
-        )
+        "Filtrar por Tipo:", ["Todos"] + tipos_disponiveis
+    )
+
+    df_filtrado = df_pokemon.copy()
+
+    if filtro_nome and "Nome" in df_filtrado.columns:
+      df_filtrado = df_filtrado[
+          df_filtrado["Nome"].str.contains(filtro_nome, case=False, na=False)
+      ]
+
+    if filtro_tipo != "Todos":
+      cond1 = (
+          df_filtrado["Tipo 1"] == filtro_tipo
+          if "Tipo 1" in df_filtrado.columns
+          else False
+      )
+      cond2 = (
+          df_filtrado["Tipo 2"] == filtro_tipo
+          if "Tipo 2" in df_filtrado.columns
+          else False
+      )
+      df_filtrado = df_filtrado[cond1 | cond2]
