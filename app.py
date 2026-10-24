@@ -41,7 +41,6 @@ st.markdown(
         background-color: rgba(0, 50, 90, 0.85) !important;
     }
 
-    /* Textos e títulos gerais da barra lateral em BRANCO */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3, 
@@ -54,24 +53,62 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    /* CORREÇÃO DOS CAMPOS DE INPUT E CAIXAS DE SELEÇÃO NA SIDEBAR */
-    /* Garante que o texto digitado na senha e no filtro de nome fique legível (escuro dentro da caixinha branca) */
     [data-testid="stSidebar"] input {
         color: #03045e !important;
         background-color: #f0f8ff !important;
     }
 
-    /* Garante que o texto selecionado na caixa de seleção de tipos fique legível */
     [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
         color: #03045e !important;
         background-color: #f0f8ff !important;
     }
     
-    /* Garante a cor dos textos internos dos menus suspensos */
     [data-testid="stSidebar"] [data-baseweb="select"] span {
         color: #03045e !important;
     }
+
+    /* --- ESTILO DA ONDA DO CLIQUE DA POKÉDEX --- */
+    .onda-pokedex {
+        position: fixed;
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        animation: expandirOnda 0.6s ease-out forwards;
+        z-index: 999999;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+
+    @keyframes expandirOnda {
+        0% {
+            width: 0px;
+            height: 0px;
+            opacity: 1;
+        }
+        100% {
+            width: 150px;
+            height: 150px;
+            opacity: 0;
+            border-width: 1px;
+        }
+    }
     </style>
+
+    <script>
+    // Captura os cliques na janela inteira e cria a onda de choque branca
+    document.addEventListener('click', function(e) {
+        const onda = document.createElement('div');
+        onda.className = 'onda-pokedex';
+        onda.style.left = e.clientX + 'px';
+        onda.style.top = e.clientY + 'px';
+        document.body.appendChild(onda);
+
+        // Remove o elemento depois que a animação termina
+        setTimeout(() => {
+            onda.remove();
+        }, 600);
+    });
+    </script>
     """,
     unsafe_allow_html=True,
 )
