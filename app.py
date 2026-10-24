@@ -162,6 +162,81 @@ def carregar_tabela_segura(conn, query, params=()):
     return pd.DataFrame()
 
 
+def calcular_defesa_tipos(tipo1, tipo2):
+  """Calcula os multiplicadores de dano recebido para os 18 tipos
+
+  com base na tabela Eficacia_Tipos do banco de dados.
+  """
+  caminho_banco = obter_caminho_banco()
+  tipos_oficiais = [
+      "Normal",
+      "Fogo",
+      "Água",
+      "Grama",
+      "Elétrico",
+      "Gelo",
+      "Lutador",
+      "Veneno",
+      "Terra",
+      "Voador",
+      "Psíquico",
+      "Inseto",
+      "Pedra",
+      "Fantasma",
+      "Dragão",
+      "Sombrio",
+      "Aço",
+      "Fada",
+  ]
+  multiplicadores = {t: 1.0 for t in tipos_oficiais}
+
+  if not os.path.exists(caminho_banco):
+    return multiplicadores
+
+  with sqlite3.connect(caminho_banco) as conn:
+    df_eficacia = carregar_tabela_segura(conn, 'SELECT * FROM "Eficacia_Tipos"')
+    if df_eficacia.empty:
+      return multiplicadores
+
+    # Tenta cruzar os dados da tabela de eficácia
+    # Supondo colunas padrão de matriz de tipos (Atacante vs Defensor)
+    for t_atk in tipos_oficiais:
+      mult_t1 = 1.0
+      mult_t2 = 1.0
+      try:
+        # Lógica genérica de busca na tabela de eficácia se houver formato matricial ou relacional
+        if "Atacante" in df_eficacia.columns and "Defensor" in df_eficacia.columns:
+          if tipo1 and pd.notnull(tipo1):
+            r1 = df_eficacia[
+                (df_eficacia["Atacante"].str.casefold() == t_atk.casefold())
+                & (
+                    df_eficacia["Defensor"].str.casefold()
+                    == str(tipo1).casefold()
+                )
+            ]
+            if not r1.empty:
+              mult_t1 = float(r1.iloc[0]["Multiplicador"])
+          if tipo2 and pd.notnull(tipo2) and str(tipo2).strip() not in ["-", ""]:
+            r2 = df_eficacia[
+                (df_eficacia["Atacante"].str.casefold() == t_atk.casefold())
+                & (
+                    df_eficacia["Defensor"].str.casefold()
+                    == str(tipo2).casefold()
+                )
+            ]
+            if not r2.empty:
+              mult_t2 = float(r2.iloc[0]["Multiplicador"])
+        elif t_atk in df_eficacia.columns:
+          # Se a tabela usa os tipos como colunas
+          pass
+      except Exception:
+        pass
+
+      multiplicadores[t_atk] = mult_t1 * mult_t2
+
+  return multiplicadores
+
+
 def buscar_detalhes_completos(pokemon_id):
   caminho_banco = obter_caminho_banco()
   with sqlite3.connect(caminho_banco) as conn:
@@ -170,7 +245,6 @@ def buscar_detalhes_completos(pokemon_id):
     )
     gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
-    # Busca espécie e descrição
     especie = gerais.get("Especie", gerais.get("Espécie", None))
     descricao_lore = gerais.get("Descricao", gerais.get("Descrição", None))
 
@@ -310,16 +384,6 @@ def carregar_dados_itens():
     return df_itens
 
 
-def carregar_eficiencia_tipos():
-  caminho_banco = obter_caminho_banco()
-  if not os.path.exists(caminho_banco):
-    return pd.DataFrame()
-
-  with sqlite3.connect(caminho_banco) as conn:
-    df = carregar_tabela_segura(conn, 'SELECT * FROM "Eficacia_Tipos"')
-    return df
-
-
 # -----------------------------------------------------------------------------
 # 2. ESTADOS DE SESSÃO
 # -----------------------------------------------------------------------------
@@ -382,13 +446,12 @@ if st.sidebar.button("Rolar Dado Publicamente"):
 st.sidebar.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 4. ESTRUTURA DE ABAS PRINCIPAIS
+# 4. ESTRUTURA DE ABAS PRINCIPAIS (Removida a aba antiga de eficácia e integrada na ficha)
 # -----------------------------------------------------------------------------
 abas_disponiveis = [
     "🐾 Pokédex Regional",
     "✨ Compêndio de Habilidades",
     "🎒 Compêndio de Itens",
-    "🛡️ Eficácia de Tipos",
 ]
 
 if st.session_state.modo_mestre:
@@ -490,7 +553,6 @@ with abas[0]:
                 f" **SR:** {poke_geral.get('SR', '—')}"
             )
 
-            # --- NOVO: SENTIDOS ---
             sentidos_val = poke_geral.get(
                 "Sentidos",
                 poke_geral.get("Sentido", "Visão Normal, Percepção Passiva 10"),
@@ -507,6 +569,44 @@ with abas[0]:
               st.markdown(f"• **Habilidade 2:** `{hab2}`")
             if hab_e:
               st.markdown(f"• **Habilidade Oculta:** `{hab_e}`")
+
+          st.write("---")
+          st.subheader("🛡️ Eficácia de Tipos (Defesa contra Ataques)")
+          st.markdown(
+              "Multiplicadores de dano recebido de cada tipo elemental (Estilo"
+              " Pokémon DB):"
+          )
+
+          # Calcula a tabela de defesa para este Pokémon específico
+          defesas = calcular_defesa_tipos(
+              poke_geral.get("Tipo 1"), poke_geral.get("Tipo 2")
+          )
+
+          # Renderiza os 18 tipos em colunas estilo badges com seus multiplicadores
+          cols_tipos = st.columns(6)
+          idx_col = 0
+          for tipo_nome, mult in defesas.items():
+            with cols_tipos[idx_col % 6]:
+              badge_html = criar_badge_tipo(tipo_nome)
+              # Formata o multiplicador com cor de destaque se for fraqueza ou resistência
+              mult_str = (
+                  f"×{mult:g}"
+                  if mult != 1
+                  else "—"  # Formata 2.0 para 2, 0.5 para 0.5, etc.
+              )
+              cor_mult = (
+                  "#e05244"
+                  if mult > 1
+                  else ("#2ecc71" if mult < 1 else "#7f8c8d")
+              )
+              st.markdown(
+                  f"""<div style="border: 1px solid #ddd; border-radius: 6px; padding: 6px; text-align: center; background: white; margin-bottom: 8px;">
+                            {badge_html}<br>
+                            <span style="color: {cor_mult}; font-weight: bold; font-size: 14px;">{mult_str}</span>
+                        </div>""",
+                  unsafe_allow_html=True,
+              )
+            idx_col += 1
 
         with aba2:
           st.subheader("Atributos de RPG (Sistema D20 / Poké5e & PTU)")
@@ -530,7 +630,6 @@ with abas[0]:
             st.metric("🏃 Deslocamento", deslocamento_val)
 
           st.write("---")
-          # --- NOVO: PERÍCIAS ---
           st.subheader("🎯 Perícias (Skills)")
           pericias_val = poke_geral.get(
               "Pericias", poke_geral.get("Perícias", "Nenhuma perícia bónus")
@@ -806,25 +905,10 @@ with abas[2]:
 
 
 # ==============================================================================
-# ABA 4: EFICÁCIA DE TIPOS
-# ==============================================================================
-with abas[3]:
-  st.title("🛡️ Tabela de Eficácia de Tipos")
-  st.markdown(
-      "Consulte os multiplicadores de dano entre os diferentes tipos elementares."
-  )
-  df_eficacia = carregar_eficiencia_tipos()
-  if df_eficacia.empty:
-    st.warning("A tabela 'Eficacia_Tipos' não foi encontrada no banco de dados.")
-  else:
-    st.dataframe(df_eficacia.fillna("-"), width=1000, hide_index=True)
-
-
-# ==============================================================================
-# ABA 5: ESCUDO DO MESTRE
+# ABA 4: ESCUDO DO MESTRE (Se ativo)
 # ==============================================================================
 if st.session_state.modo_mestre:
-  with abas[4]:
+  with abas[3]:
     st.title("🧙‍♂️ Escudo do Mestre")
     sub_mercado, sub_roleplay, sub_clima_dados, sub_regras = st.tabs(
         [
