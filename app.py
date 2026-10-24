@@ -40,6 +40,55 @@ st.markdown(
 )
 
 
+# -----------------------------------------------------------------------------
+# ESTILIZAÇÃO COMPLEMENTAR (ESTILO POKÉMONDB)
+# -----------------------------------------------------------------------------
+def criar_badge_tipo(tipo):
+    if not tipo or pd.isna(tipo) or str(tipo).strip() in ["-", "", "None"]:
+        return ""
+
+    cores_tipos = {
+        "Normal": "#AAAA99",
+        "Fogo": "#FF4422",
+        "Água": "#3399FF",
+        "Grama": "#6CC644",
+        "Elétrico": "#F7D02C",
+        "Eletrico": "#FfCC33",
+        "Gelo": "#96D9D6",
+        "Lutador": "#C22E28",
+        "Venenoso": "#AA5599",
+        "Veneno": "#A33EA0",
+        "Terra": "#DDBB55",
+        "Voador": "#8899ff",
+        "Psíquico": "#FF5599",
+        "Psiquico": "#F95587",
+        "Inseto": "#AABB22",
+        "Pedra": "#B6A136",
+        "Fantasma": "#735797",
+        "Dragão": "#6F35FC",
+        "Dragon": "#6F35FC",
+        "Sombrio": "#775544",
+        "Metal": "#6CC644",
+        "Aço": "#6CC644",
+        "Fada": "#D685AD",
+    }
+
+    cor = cores_tipos.get(str(tipo).capitalize(), "#777777")
+    return f"""<span style="
+background-color: {cor};
+color: white;
+padding: 3px 8px;
+border-radius: 4px;
+font-weight: bold;
+font-size: 11px;
+text-transform: uppercase;
+display: inline-block;
+min-width: 65px;
+text-align: center;">
+{tipo}
+</span>"""
+
+
 def criar_badge_categoria(categoria):
     if not categoria or pd.isna(categoria):
         return "—"
@@ -58,7 +107,7 @@ def criar_badge_categoria(categoria):
 # -----------------------------------------------------------------------------
 def obter_caminho_banco():
     caminho_atual = os.path.dirname(__file__)
-    return os.path.join(caminho_atual, "Aztlas_Dex.db")
+    return os.path.join(caminho_atual, "pokedex aztlas - Copia.db")
 
 
 def carregar_dados_pokemon():
@@ -67,7 +116,7 @@ def carregar_dados_pokemon():
         return pd.DataFrame()
 
     with sqlite3.connect(caminho_banco) as conn:
-        query = """SELECT * FROM Pokemon"""
+        query = """SELECT * FROM pokemon"""
         df = pd.read_sql_query(query, conn)
         return df
 
@@ -96,7 +145,7 @@ def buscar_detalhes_completos(pokemon_id):
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
         df_geral = carregar_tabela_segura(
-            conn, 'SELECT * FROM Pokemon WHERE "ID" = ?', (pokemon_id,)
+            conn, 'SELECT * FROM pokemon WHERE "ID" = ?', (pokemon_id,)
         )
         gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
@@ -820,4 +869,3 @@ if st.session_state.modo_mestre:
                     "Crie o arquivo `regras_mestre.md` na mesma pasta do `app.py` para"
                     " exibir suas regras e tabelas aqui."
                 )
-
