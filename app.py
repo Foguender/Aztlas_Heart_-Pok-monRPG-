@@ -424,24 +424,34 @@ elif senha != "":
 st.sidebar.markdown("---")
 st.sidebar.subheader("🎲 Rolagem Pública de Dados")
 jogador_nome = st.sidebar.text_input("Seu Nome / Personagem:", "")
-faces_dado = st.sidebar.selectbox("Escolher Dado:", [20, 6, 10, 12, 100])
 
-if st.sidebar.button("Rolar Dado Publicamente"):
+col_qtd, col_dado = st.sidebar.columns([1, 1])
+with col_qtd:
+  qtd_dados = st.number_input("Qtd:", min_value=1, max_value=10, value=1)
+with col_dado:
+  faces_dado = st.selectbox("Dado:", [20, 4, 6, 8, 10, 12, 100])
+
+if st.sidebar.button("Rolar Dados Publicamente"):
   if not jogador_nome:
     st.sidebar.warning("Insira o seu nome primeiro!")
   else:
-    resultado = random.randint(1, faces_dado)
+    # Sorteia cada dado individualmente
+    resultados = [random.randint(1, faces_dado) for _ in range(int(qtd_dados))]
+    resultados_str = ", ".join(map(str, resultados))
+    descricao_dado = f"{int(qtd_dados)}d{faces_dado}"
+
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
       cursor = conn.cursor()
+      # Guardamos os valores separados como texto (ex: "1, 5, 4") para o histórico
       cursor.execute(
           "INSERT INTO Historico_Rolagens_Mesa (jogador, dado, resultado)"
           " VALUES (?, ?, ?)",
-          (jogador_nome, f"D{faces_dado}", resultado),
+          (jogador_nome, descricao_dado, resultados_str),
       )
       conn.commit()
     st.sidebar.success(
-        f"🎲 {jogador_nome} rolou um D{faces_dado} e tirou: **{resultado}**!"
+        f"🎲 {jogador_nome} rolou `{descricao_dado}` e tirou: **[{resultados_str}]**!"
     )
 
 st.sidebar.markdown("---")
