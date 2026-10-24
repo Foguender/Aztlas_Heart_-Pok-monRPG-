@@ -170,7 +170,7 @@ def buscar_detalhes_completos(pokemon_id):
     )
     gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
-    # Busca espécie e descrição (tenta na tabela secundária se não estiver na principal)
+    # Busca espécie e descrição
     especie = gerais.get("Especie", gerais.get("Espécie", None))
     descricao_lore = gerais.get("Descricao", gerais.get("Descrição", None))
 
@@ -489,6 +489,14 @@ with abas[0]:
                 f"📏 **Tamanho:** {poke_geral.get('Tamanho', '—')} | 🎯"
                 f" **SR:** {poke_geral.get('SR', '—')}"
             )
+
+            # --- NOVO: SENTIDOS ---
+            sentidos_val = poke_geral.get(
+                "Sentidos",
+                poke_geral.get("Sentido", "Visão Normal, Percepção Passiva 10"),
+            )
+            st.markdown(f"👁️ **Sentidos:** {sentidos_val}")
+
             st.write("---")
             st.subheader("✨ Habilidades")
             hab1 = poke_geral.get("Habilidade 1", "Nenhuma")
@@ -520,6 +528,14 @@ with abas[0]:
                 "Deslocamento", poke_geral.get("Movimento", "9m (6 sq)")
             )
             st.metric("🏃 Deslocamento", deslocamento_val)
+
+          st.write("---")
+          # --- NOVO: PERÍCIAS ---
+          st.subheader("🎯 Perícias (Skills)")
+          pericias_val = poke_geral.get(
+              "Pericias", poke_geral.get("Perícias", "Nenhuma perícia bónus")
+          )
+          st.info(f"**Bónus de Perícias:** {pericias_val}")
 
         with aba3:
           st.subheader("Linhagem de Evolução")
