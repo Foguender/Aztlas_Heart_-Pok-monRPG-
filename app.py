@@ -31,7 +31,7 @@ st.markdown(
         background-color: rgba(255, 255, 255, 0.95);
     }
 
-    /* Textos do corpo principal da página (dentro da caixa branca) */
+    /* Textos do corpo principal da página */
     .main h1, .main h2, .main h3, .main h4, .main h5, .main h6, .main p, .main span, .main label {
         color: #03045e !important;
     }
@@ -41,7 +41,7 @@ st.markdown(
         background-color: rgba(0, 50, 90, 0.85) !important;
     }
 
-    /* Força todos os textos da barra lateral (incluindo links e logos) a ficarem em BRANCO */
+    /* Textos e títulos gerais da barra lateral em BRANCO */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3, 
@@ -54,8 +54,21 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    /* Caixa de texto dos inputs na sidebar */
+    /* CORREÇÃO DOS CAMPOS DE INPUT E CAIXAS DE SELEÇÃO NA SIDEBAR */
+    /* Garante que o texto digitado na senha e no filtro de nome fique legível (escuro dentro da caixinha branca) */
     [data-testid="stSidebar"] input {
+        color: #03045e !important;
+        background-color: #f0f8ff !important;
+    }
+
+    /* Garante que o texto selecionado na caixa de seleção de tipos fique legível */
+    [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+        color: #03045e !important;
+        background-color: #f0f8ff !important;
+    }
+    
+    /* Garante a cor dos textos internos dos menus suspensos */
+    [data-testid="stSidebar"] [data-baseweb="select"] span {
         color: #03045e !important;
     }
     </style>
