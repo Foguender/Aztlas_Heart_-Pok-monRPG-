@@ -31,14 +31,39 @@ st.markdown(
         background-color: rgba(255, 255, 255, 0.95);
     }
 
+    /* Textos do corpo principal continuam com azul escuro para ler bem no fundo branco */
     h1, h2, h3, h4, h5, h6, p, span, label, div {
+        color: #03045e !important;
+    }
+
+    /* --- ESTILOS EXCLUSIVOS PARA A BARRA LATERAL (SIDEBAR) --- */
+    
+    /* Força o fundo da barra lateral a acompanhar o tom azul ou escuro limpo */
+    [data-testid="stSidebar"] {
+        background-color: rgba(0, 50, 90, 0.85) !important;
+    }
+
+    /* FORÇA TODOS OS TEXTOS, TÍTULOS E LABELS DA BARRA LATERAL A FICAR EM BRANCO */
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3, 
+    [data-testid="stSidebar"] h4, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] div,
+    [data-testid="stSidebar"] .stMarkdown {
+        color: #ffffff !important;
+    }
+
+    /* Ajuste para os campos de texto e caixas de seleção dentro da barra lateral ficarem legíveis */
+    [data-testid="stSidebar"] input {
         color: #03045e !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 # -----------------------------------------------------------------------------
 # FUNÇÕES DE ESTILO (BADGES)
 # -----------------------------------------------------------------------------
