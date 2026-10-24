@@ -31,12 +31,10 @@ st.markdown(
         background-color: rgba(255, 255, 255, 0.95);
     }
 
-    /* Textos do corpo principal da página */
     .main h1, .main h2, .main h3, .main h4, .main h5, .main h6, .main p, .main span, .main label {
         color: #03045e !important;
     }
 
-    /* --- ESTILOS DA BARRA LATERAL (SIDEBAR) --- */
     [data-testid="stSidebar"] {
         background-color: rgba(0, 50, 90, 0.85) !important;
     }
@@ -172,16 +170,29 @@ def buscar_detalhes_completos(pokemon_id):
     )
     gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
-    try:
-      cursor = conn.cursor()
-      cursor.execute(
-          'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE "ID"'
-          " = ?",
-          (pokemon_id,),
-      )
-      descricao = cursor.fetchone()
-    except Exception:
-      descricao = ("Sem espécie", "Sem descrição disponível.")
+    # Busca espécie e descrição (tenta na tabela secundária se não estiver na principal)
+    especie = gerais.get("Especie", gerais.get("Espécie", None))
+    descricao_lore = gerais.get("Descricao", gerais.get("Descrição", None))
+
+    if not especie or not descricao_lore:
+      try:
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT "Espécie", "Descrição" FROM descricao_pokedexrpg WHERE'
+            ' "ID" = ?',
+            (pokemon_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+          especie = especie or row[0]
+          descricao_lore = descricao_lore or row[1]
+      except Exception:
+        pass
+
+    descricao = (
+        especie or "Desconhecida",
+        descricao_lore or "Sem descrição disponível.",
+    )
 
     pokemon_nome = gerais.get("Nome", "")
     learnset_df = carregar_tabela_segura(
@@ -355,7 +366,6 @@ if st.sidebar.button("Rolar Dado Publicamente"):
     st.sidebar.warning("Insira o seu nome primeiro!")
   else:
     resultado = random.randint(1, faces_dado)
-    # Grava diretamente no banco de dados para sincronizar à distância!
     caminho_banco = obter_caminho_banco()
     with sqlite3.connect(caminho_banco) as conn:
       cursor = conn.cursor()
@@ -469,9 +479,8 @@ with abas[0]:
             st.image(url_sprite, caption=nome_p, width=200)
           with col2:
             st.subheader("Informações Biológicas")
-            if poke_desc and poke_desc[0]:
-              st.markdown(f"**Espécie:** {poke_desc[0]}")
-              st.markdown(f"*\"{poke_desc[1]}\"*")
+            st.markdown(f"**Espécie:** {poke_desc[0]}")
+            st.markdown(f"*\"{poke_desc[1]}\"*")
             st.write("---")
             t1 = criar_badge_tipo(poke_geral.get("Tipo 1"))
             t2 = criar_badge_tipo(poke_geral.get("Tipo 2"))
@@ -492,8 +501,8 @@ with abas[0]:
               st.markdown(f"• **Habilidade Oculta:** `{hab_e}`")
 
         with aba2:
-          st.subheader("Atributos de RPG (Sistema D20)")
-          col_s1, col_s2, col_s3 = st.columns(3)
+          st.subheader("Atributos de RPG (Sistema D20 / Poké5e & PTU)")
+          col_s1, col_s2, col_s3, col_s4 = st.columns(4)
           with col_s1:
             st.metric("HP", poke_geral.get("HP", "—"))
             st.metric("FOR", poke_geral.get("FOR", "—"))
@@ -506,6 +515,11 @@ with abas[0]:
             st.metric("CAR", poke_geral.get("CAR", "—"))
             st.metric("CA", poke_geral.get("CA", "—"))
             st.metric("Hit Dice", poke_geral.get("Hit Dice", "—"))
+          with col_s4:
+            deslocamento_val = poke_geral.get(
+                "Deslocamento", poke_geral.get("Movimento", "9m (6 sq)")
+            )
+            st.metric("🏃 Deslocamento", deslocamento_val)
 
         with aba3:
           st.subheader("Linhagem de Evolução")
@@ -884,8 +898,6 @@ if st.session_state.modo_mestre:
           " real:"
       )
 
-
-      # Criamos um fragmento que roda a função de busca no banco a cada 3 segundos
       @st.fragment(run_every=3)
       def atualizar_rolagens():
         caminho_banco = obter_caminho_banco()
@@ -905,7 +917,6 @@ if st.session_state.modo_mestre:
                 f" `{r['dado']}` 🕒 *({r['data_hora']})*"
             )
 
-      # Chamamos o fragmento
       atualizar_rolagens()
 
       if st.button("🗑️ Limpar Histórico de Rolagens do Banco"):
