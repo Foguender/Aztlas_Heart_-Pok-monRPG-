@@ -381,3 +381,4 @@ with abas[0]:
     tipos_disponiveis = sorted(list(set(col_t1) | set(col_t2)))
     filtro_tipo = st.sidebar.selectbox(
         "Filtrar por Tipo:", ["Todos"] + tipos
+        )
