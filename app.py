@@ -31,19 +31,17 @@ st.markdown(
         background-color: rgba(255, 255, 255, 0.95);
     }
 
-    /* Textos do corpo principal continuam com azul escuro para ler bem no fundo branco */
-    h1, h2, h3, h4, h5, h6, p, span, label, div {
+    /* Textos do corpo principal da página (dentro da caixa branca) */
+    .main h1, .main h2, .main h3, .main h4, .main h5, .main h6, .main p, .main span, .main label {
         color: #03045e !important;
     }
 
-    /* --- ESTILOS EXCLUSIVOS PARA A BARRA LATERAL (SIDEBAR) --- */
-    
-    /* Força o fundo da barra lateral a acompanhar o tom azul ou escuro limpo */
+    /* --- ESTILOS DA BARRA LATERAL (SIDEBAR) --- */
     [data-testid="stSidebar"] {
         background-color: rgba(0, 50, 90, 0.85) !important;
     }
 
-    /* FORÇA TODOS OS TEXTOS, TÍTULOS E LABELS DA BARRA LATERAL A FICAR EM BRANCO */
+    /* Força todos os textos da barra lateral (incluindo links e logos) a ficarem em BRANCO */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3, 
@@ -52,11 +50,11 @@ st.markdown(
     [data-testid="stSidebar"] span, 
     [data-testid="stSidebar"] label, 
     [data-testid="stSidebar"] div,
-    [data-testid="stSidebar"] .stMarkdown {
+    [data-testid="stSidebar"] a {
         color: #ffffff !important;
     }
 
-    /* Ajuste para os campos de texto e caixas de seleção dentro da barra lateral ficarem legíveis */
+    /* Caixa de texto dos inputs na sidebar */
     [data-testid="stSidebar"] input {
         color: #03045e !important;
     }
