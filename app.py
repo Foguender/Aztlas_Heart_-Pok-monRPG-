@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURAÇÃO DA PÁGINA E VISUAL (TEMA AZUL CERÚLEO)
+# CONFIGURAÇÃO DA PÁGINA & ESTILO (TEMA AZUL CERÚLEO + ANIMAÇÃO DE CLIQUE)
 # -----------------------------------------------------------------------------
 st.set_page_config(page_title="PokéDex Aztlas", page_icon="🐾", layout="wide")
 
@@ -67,7 +67,7 @@ st.markdown(
         color: #03045e !important;
     }
 
-    /* --- ESTILO DA ONDA DO CLIQUE DA POKÉDEX --- */
+    /* --- ONDA DE CLIQUE DA POKÉDEX --- */
     .onda-pokedex {
         position: fixed;
         border: 2px solid rgba(255, 255, 255, 0.9);
@@ -80,38 +80,26 @@ st.markdown(
     }
 
     @keyframes expandirOnda {
-        0% {
-            width: 0px;
-            height: 0px;
-            opacity: 1;
-        }
-        100% {
-            width: 150px;
-            height: 150px;
-            opacity: 0;
-            border-width: 1px;
-        }
+        0% { width: 0px; height: 0px; opacity: 1; }
+        100% { width: 150px; height: 150px; opacity: 0; border-width: 1px; }
     }
     </style>
 
     <script>
-    // Captura os cliques na janela inteira e cria a onda de choque branca
     document.addEventListener('click', function(e) {
         const onda = document.createElement('div');
         onda.className = 'onda-pokedex';
         onda.style.left = e.clientX + 'px';
         onda.style.top = e.clientY + 'px';
         document.body.appendChild(onda);
-
-        // Remove o elemento depois que a animação termina
-        setTimeout(() => {
-            onda.remove();
-        }, 600);
+        setTimeout(() => { onda.remove(); }, 600);
     });
     </script>
     """,
     unsafe_allow_html=True,
 )
+
+
 # -----------------------------------------------------------------------------
 # FUNÇÕES DE ESTILO (BADGES)
 # -----------------------------------------------------------------------------
@@ -160,11 +148,10 @@ text-align: center;">
 
 
 # -----------------------------------------------------------------------------
-# 1. BANCO DE DADOS & QUERIES (ATUALIZADO PARA "Aztlas_Dex.db")
+# 1. BANCO DE DADOS & QUERIES
 # -----------------------------------------------------------------------------
 def obter_caminho_banco():
   caminho_atual = os.path.dirname(__file__)
-  # Mudança para o novo banco de dados unificado
   return os.path.join(caminho_atual, "Aztlas_Dex.db")
 
 
@@ -189,12 +176,13 @@ def carregar_tabela_segura(conn, query, params=()):
 def buscar_detalhes_completos(pokemon_id):
   caminho_banco = obter_caminho_banco()
   with sqlite3.connect(caminho_banco) as conn:
+    # 1. Dados gerais, stats e breeding (Tudo vem direto da tabela Pokemon!)
     df_geral = carregar_tabela_segura(
         conn, 'SELECT * FROM Pokemon WHERE "ID" = ?', (pokemon_id,)
     )
     gerais = df_geral.iloc[0].to_dict() if not df_geral.empty else {}
 
-    # Tentativa de carregar descrição
+    # 2. Descrição (se houver tabela de descrições)
     try:
       cursor = conn.cursor()
       cursor.execute(
@@ -206,26 +194,20 @@ def buscar_detalhes_completos(pokemon_id):
     except Exception:
       descricao = ("Sem espécie", "Sem descrição disponível.")
 
-    # Base Stats
-    cursor = conn.cursor()
-    cursor.execute(
-        'SELECT * FROM "Base Stats" WHERE "id_pokemon" = ?', (pokemon_id,)
-    )
-    stats = cursor.fetchone()
-    if not stats:
-      cursor.execute('SELECT * FROM "Base Stats" WHERE "ID" = ?', (pokemon_id,))
-      stats = cursor.fetchone()
-
-    # Breeding & Training
-    cursor.execute('SELECT * FROM "Tr_Br" WHERE "ID" = ?', (pokemon_id,))
-    breeding = cursor.fetchone()
-
-    # Golpes
+    # 3. Golpes
+    pokemon_nome = gerais.get("Nome", "")
     learnset_df = carregar_tabela_segura(
         conn,
-        'SELECT * FROM "Learnset_pokemon" WHERE "pokemon_id" = ? OR "ID" = ?',
-        (pokemon_id, pokemon_id),
+        'SELECT * FROM "Learnset" WHERE "Pokemon_Nome" = ?',
+        (pokemon_nome,),
     )
+    if learnset_df.empty:
+      learnset_df = carregar_tabela_segura(
+          conn,
+          'SELECT * FROM "Learnset_pokemon" WHERE "pokemon_id" = ? OR "ID" = ?',
+          (pokemon_id, pokemon_id),
+      )
+
     tm_df = carregar_tabela_segura(
         conn,
         'SELECT * FROM "Tm_pokémon" WHERE "pokemon_id" = ? OR "ID" = ?',
@@ -242,54 +224,51 @@ def buscar_detalhes_completos(pokemon_id):
         (pokemon_id, pokemon_id),
     )
 
-    if (
-        learnset_df.empty
-        and tm_df.empty
-        and egg_df.empty
-        and teacher_df.empty
-    ):
-      learnset_df = carregar_tabela_segura(
-          conn,
-          'SELECT * FROM "pokemon_moves" WHERE "pokemon_id" = ?',
-          (pokemon_id,),
-      )
-
-    # Evoluções
+    # 4. Evoluções
     query_evo = """
         SELECT 
         p1.Nome AS [Forma Inicial], 
-        e.forma_de_2evoluir AS [Método / Requisito 1], 
-        p2.Nome AS [2ª Evolução], 
-        e.forma_de_3evoluir AS [Método / Requisito 2], 
-        p3.Nome AS [3ª Evolução]
-        FROM Evolution_chart e
-        LEFT JOIN pokemon p1 ON e.pokemon_id_1 = p1.ID
-        LEFT JOIN pokemon p2 ON e.pokemon_id_2 = p2.ID
-        LEFT JOIN pokemon p3 ON e.pokemon_id_3 = p3.ID
-        WHERE e.pokemon_id_1 = ? OR e.pokemon_id_2 = ? OR e.pokemon_id_3 = ?
+        e.Nivel_Neccesario AS [Nível], 
+        p2.Nome AS [Evolução]
+        FROM Evolucoes e
+        LEFT JOIN Pokemon p1 ON e.Pokemon_Origem = p1.ID
+        LEFT JOIN Pokemon p2 ON e.Pokemon_Destino = p2.ID
+        WHERE e.Pokemon_Origem = ? OR e.Pokemon_Destino = ?
         """
-    evo_df = carregar_tabela_segura(
-        conn, query_evo, (pokemon_id, pokemon_id, pokemon_id)
-    )
-
-    # Localização
-    loc_df = pd.DataFrame()
-    for nome_tabela in [
-        "Locations_Pok mon",
-        "Locations_Pokémon",
-        "location_pokemon",
-    ]:
-      query_loc = f"""
-            SELECT l.Location AS [Local], lp.spawn_method AS [Método], 
-            lp.chance_rate AS [Chance], lp.min_level AS [Nível Mín], 
-            lp.max_level AS [Nível Máx], lp.time_of_day AS [Horário]
-            FROM "{nome_tabela}" lp
-            JOIN Locations l ON lp.location_id = l.ID
-            WHERE lp.pokemon_id = ?
+    evo_df = carregar_tabela_segura(conn, query_evo, (pokemon_id, pokemon_id))
+    if evo_df.empty:
+      query_evo_alt = """
+            SELECT 
+            p1.Nome AS [Forma Inicial], 
+            e.forma_de_2evoluir AS [Método / Requisito 1], 
+            p2.Nome AS [2ª Evolução]
+            FROM Evolution_chart e
+            LEFT JOIN Pokemon p1 ON e.pokemon_id_1 = p1.ID
+            LEFT JOIN Pokemon p2 ON e.pokemon_id_2 = p2.ID
+            WHERE e.pokemon_id_1 = ? OR e.pokemon_id_2 = ?
             """
-      loc_df = carregar_tabela_segura(conn, query_loc, (pokemon_id,))
-      if not loc_df.empty:
-        break
+      evo_df = carregar_tabela_segura(
+          conn, query_evo_alt, (pokemon_id, pokemon_id)
+      )
+
+    # 5. Localização
+    loc_df = pd.DataFrame()
+    for nome_tabela in ["Spawn_Pokemon", "Locations_Pok mon", "Locations_Pokémon"]:
+      try:
+        query_loc = f"""
+                SELECT Local_Nome AS [Local], Metodo_Aparecimento AS [Método], 
+                Tx_Chance AS [Chance], Nivel_Minimo AS [Nível Mín], 
+                Nivel_Maximo AS [Nível Máx], Periodo_Dia AS [Horário]
+                FROM "{nome_tabela}"
+                WHERE Pokemon_Nome = ? OR pokemon_id = ?
+                """
+        loc_df = carregar_tabela_segura(
+            conn, query_loc, (pokemon_nome, pokemon_id)
+        )
+        if not loc_df.empty:
+          break
+      except Exception:
+        continue
 
     golpes_dict = {
         "learnset": learnset_df,
@@ -298,7 +277,7 @@ def buscar_detalhes_completos(pokemon_id):
         "teacher": teacher_df,
     }
 
-    return gerais, descricao, stats, breeding, golpes_dict, evo_df, loc_df
+    return gerais, descricao, golpes_dict, evo_df, loc_df
 
 
 def carregar_dados_habilidades():
@@ -311,9 +290,9 @@ def carregar_dados_habilidades():
       df = carregar_tabela_segura(conn, f'SELECT * FROM "{nome_tabela}"')
       if not df.empty:
         df.columns = [
-            c.replace("DescriÃ§ao", "Descrição").replace(
-                "Descricao", "Descrição"
-            )
+            c.replace("DescriÃ§ao", "Descrição")
+            .replace("Descricao", "Descrição")
+            .replace("DescriÃ§Ã£o", "Descrição")
             for c in df.columns
         ]
         return df
@@ -442,16 +421,10 @@ with abas[0]:
         st.session_state.id_pokemon_selecionado = None
         st.rerun()
 
-      (
-          poke_geral,
-          poke_desc,
-          poke_stats,
-          poke_breed,
-          golpes,
-          poke_evo,
-          poke_loc,
-      ) = buscar_detalhes_completos(
-          int(st.session_state.id_pokemon_selecionado)
+      poke_geral, poke_desc, golpes, poke_evo, poke_loc = (
+          buscar_detalhes_completos(
+              int(st.session_state.id_pokemon_selecionado)
+          )
       )
 
       if poke_geral:
@@ -475,7 +448,7 @@ with abas[0]:
             st.image(url_sprite, caption=nome_p, width=200)
           with col2:
             st.subheader("Informações Biológicas")
-            if poke_desc:
+            if poke_desc and poke_desc[0]:
               st.markdown(f"**Espécie:** {poke_desc[0]}")
               st.markdown(f"*\"{poke_desc[1]}\"*")
             st.write("---")
@@ -490,7 +463,7 @@ with abas[0]:
             st.subheader("✨ Habilidades")
             hab1 = poke_geral.get("Habilidade 1", "Nenhuma")
             hab2 = poke_geral.get("Habilidade 2", None)
-            hab_e = poke_geral.get("Habilidade Oculta", None)
+            hab_e = poke_geral.get("Habilidade E", None)
             st.markdown(f"• **Habilidade 1:** `{hab1}`")
             if hab2:
               st.markdown(f"• **Habilidade 2:** `{hab2}`")
@@ -499,27 +472,26 @@ with abas[0]:
 
         with aba2:
           st.subheader("Atributos de RPG (Sistema D20)")
-          if poke_stats:
-            col_s1, col_s2, col_s3 = st.columns(3)
-            with col_s1:
-              st.metric("HP", poke_stats[2] if len(poke_stats) > 2 else "—")
-              st.metric("FOR", poke_stats[3] if len(poke_stats) > 3 else "—")
-              st.metric("DES", poke_stats[4] if len(poke_stats) > 4 else "—")
-            with col_s2:
-              st.metric("CON", poke_stats[5] if len(poke_stats) > 5 else "—")
-              st.metric("INT", poke_stats[6] if len(poke_stats) > 6 else "—")
-              st.metric("SAB", poke_stats[7] if len(poke_stats) > 7 else "—")
-            with col_s3:
-              st.metric("CAR", poke_stats[8] if len(poke_stats) > 8 else "—")
-              if len(poke_stats) > 12:
-                st.metric("CA", poke_stats[12])
+          col_s1, col_s2, col_s3 = st.columns(3)
+          with col_s1:
+            st.metric("HP", poke_geral.get("HP", "—"))
+            st.metric("FOR", poke_geral.get("FOR", "—"))
+            st.metric("DES", poke_geral.get("DES", "—"))
+          with col_s2:
+            st.metric("CON", poke_geral.get("CON", "—"))
+            st.metric("INT", poke_geral.get("INT", "—"))
+            st.metric("SAB", poke_geral.get("SAB", "—"))
+          with col_s3:
+            st.metric("CAR", poke_geral.get("CAR", "—"))
+            st.metric("CA", poke_geral.get("CA", "—"))
+            st.metric("Hit Dice", poke_geral.get("Hit Dice", "—"))
 
         with aba3:
           st.subheader("Linhagem de Evolução")
           if not poke_evo.empty:
             st.dataframe(poke_evo, width=800, hide_index=True)
           else:
-            st.info("Este Pokémon não possui evoluções registradas.")
+            st.info("Este Pokémon não possui evoluções registadas.")
 
         with aba4:
           st.subheader("Locais de Aparição em Aztlas")
@@ -530,17 +502,22 @@ with abas[0]:
 
         with aba5:
           st.subheader("Dados de Cruzamento e Treinamento")
-          if poke_breed:
-            st.markdown(
-                f"**EV:** {poke_breed[2] if len(poke_breed) > 2 else '—'}"
-            )
-            st.markdown(
-                "**Amizade Base:**"
-                f" {poke_breed[3] if len(poke_breed) > 3 else '—'}"
-            )
-            g1 = poke_breed[4] if len(poke_breed) > 4 else "—"
-            g2 = poke_breed[5] if len(poke_breed) > 5 else "—"
-            st.markdown(f"**Grupo de Ovos:** {g1} / {g2}")
+          st.markdown(
+              "**Grupo de Ovos 1:**"
+              f" {poke_geral.get('Grupo de Ovos 1', '—')}"
+          )
+          st.markdown(
+              "**Grupo de Ovos 2:**"
+              f" {poke_geral.get('Grupo de Ovos 2', '—')}"
+          )
+          st.markdown(
+              "**Taxa de Género M:**"
+              f" {poke_geral.get('Tx. Genero M', '—')}%"
+          )
+          st.markdown(
+              "**Taxa de Género F:**"
+              f" {poke_geral.get('Tx. Genero F', '—')}%"
+          )
 
         with aba6:
           st.subheader("⚔️ Movimentos e Golpes Aprendidos")
@@ -558,7 +535,11 @@ with abas[0]:
               df_exibicao["Nível"] = df[coluna_nivel].apply(
                   lambda x: f"Lvl {x}" if pd.notnull(x) else "1"
               )
-            if "Nome" in df.columns:
+            if "Golpe_Nome" in df.columns:
+              df_exibicao["Golpe"] = df["Golpe_Nome"].apply(
+                  lambda x: f"<b>{x}</b>"
+              )
+            elif "Nome" in df.columns:
               df_exibicao["Golpe"] = df["Nome"].apply(
                   lambda x: f"<b>{x}</b>"
               )
@@ -606,9 +587,7 @@ with abas[0]:
             )
 
           with tab_learn:
-            renderizar_tabela_pokemondb(
-                golpes["learnset"], coluna_nivel="Nivel"
-            )
+            renderizar_tabela_pokemondb(golpes["learnset"], coluna_nivel="Level")
           with tab_tm:
             renderizar_tabela_pokemondb(golpes["tm"])
           with tab_egg:
@@ -666,7 +645,7 @@ with abas[1]:
       for _, hab in df_hab_filtradas.iterrows():
         nome_h = hab.get("Nome", hab.get("ID", "Habilidade"))
         efeito_h = hab.get("Efeito", "")
-        desc_h = hab.get("Descrição", hab.get("DescriÃ§ao", ""))
+        desc_h = hab.get("Descrição", "")
         with st.expander(f"✨ **{nome_h}**"):
           if (
               pd.notnull(efeito_h)
@@ -762,7 +741,7 @@ with abas[2]:
               st.info(f"⚡ **Efeito:** {efeito}")
           with col_e2:
             st.markdown("**Descrição / Lore:**")
-            st.write(item.get("Descrição", "Sem descrição."))
+            st.write(item.get("Descricao", "Sem descrição."))
     else:
       df_exibicao = df_itens_filtrados.copy()
       df_exibicao["Preço"] = df_exibicao.apply(
