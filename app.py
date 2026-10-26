@@ -974,28 +974,27 @@ if st.session_state.modo_mestre:
 
       if st.button("🎲 Rolar Clima para esta Estação"):
         climas_por_estacao = {
-            "Primavera": [
-                "Chuva leve e revigorante",
-                "Manhã ensolarada com brisa",
-                "Temporal passageiro",
-                "Névoa matinal densa",
+            "Primavera/Verão": [
+                "Sol Forte, Calmo",
+                "Sol Forte, Ventoso",
+                "Nublado, Calmo",
+                "Nublado, Ventoso",
+                "Nebuloso",
+                "Garoa Leve",
+                "Chuva Forte",
+                "Tempestade Perigosa",
             ],
-            "Verão": [
-                "Sol escaldante e céu limpo",
-                "Calor abafado com trovoada à tarde",
-                "Onda de calor extremo",
-                "Brisa seca",
-            ],
-            "Outono": [
-                "Vento forte e folhas ao chão",
-                "Chuva persistente e fria",
-                "Céu nublado e cinzento",
-                "Geada leve ao amanhecer",
-            ],
-            "Inverno": [
-                "Nevasca rigorosa",
-                "Frio congelante com céu aberto",
-                "Geada profunda",
+            "Outono/Inverno": [
+                "Sol Forte, Calmo",
+                "Sol Forte, Ventoso",
+                "Nublado, Calmo",
+                "Nublado, Ventoso",
+                "Nebuloso",
+                "Garoa Leve",
+                "Chuva Forte",
+                "Neve Leve",
+                "Nevasca Forte",
+                "Tempestade de Neve",
                 "Tempestade de granizo",
             ],
         }
