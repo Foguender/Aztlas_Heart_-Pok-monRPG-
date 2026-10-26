@@ -969,7 +969,7 @@ if st.session_state.modo_mestre:
       st.subheader("🌤️ Gerador de Clima por Estação")
       estacao_escolhida = st.selectbox(
           "Selecione a Estação do Ano em Aztlas:",
-          ["Primavera", "Verão", "Outono", "Inverno"],
+          ["Primavera/Verão", "Outono/Inverno"],
       )
 
       if st.button("🎲 Rolar Clima para esta Estação"):
