@@ -33,6 +33,21 @@ Esta ação não exige quase nenhum tempo ou esforço, mas só pode ser feita no
 
 Uma reação acontece em resposta a outra coisa. É um reflexo ou resposta automática, que pode ocorrer mesmo fora do seu turno. O ataque de oportunidade é o tipo mais comum de reação. Quando você realiza uma reação, você não pode realizar outra até o início do seu próximo turno. Se sua reação interrompeu o turno de outra criatura, aquela criatura pode continuar o turno depois da reação.
 
+### Tipos de Terreno
+
+* **Terreno Difícil**
+  Qualquer lugar que não permita uma caminhada normal e prática. Como: Terrenos acidentados, escadas, destroços e etc. A cada 1,5m percorridos em terreno difícil custará 1,5m adicionais de movimento. Criaturas com deslocamento de voo ou levitação ignoram terreno difícil, a menos que o obstáculo afete o ar.
+  > [AVISO]:
+  > O espaço ocupado por uma criatura também se caracteriza como terreno difícil exceto se ela possuir duas categorias de tamanho abaixo ou acima de você.
+* **Terreno Perigoso**
+* **Terreno Macio**
+* **Terreno Sólido**
+* **Terreno Escorregadio**
+* **Terreno Oculto**
+* **Terreno Molhado**
+* **Terreno Lamacento**
+* **Terreno Movediço**
+
 ## Efeitos de Batalha: Clima
 
 ### **Sol Intenso (Harsh Sun):**
