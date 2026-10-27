@@ -1086,64 +1086,67 @@ if st.session_state.modo_mestre:
           st.session_state.lista_iniciativa = []
           st.rerun()
 
-    # CALCULADORA DE DANO
+    # --- NOVO: CALCULADORA DE DANO DINÂMICA ---
     with sub_calculadora:
-        st.subheader("Calculadora de dano & Eficácia")
-        st.markdown(
-            "Simule um golpe escolhendo o tipo do ataque e o Pokémon defensor para"
-            " calcular a eficácia instantâneamente."
+      st.subheader("💥 Calculadora de Dano & Eficácia")
+      st.markdown(
+          "Simule um golpe escolhendo o tipo do ataque e o Pokémon defensor para"
+          " calcular a eficácia instantaneamente."
+      )
+
+      df_todos_pokemons = carregar_dados_pokemon()
+      if df_todos_pokemons.empty:
+        st.warning("Nenhum Pokémon carregado para simulação.")
+      else:
+        nomes_pokemons = sorted(
+            df_todos_pokemons["Nome"].dropna().unique().tolist()
         )
 
-        df_todos_pokemons = carregar_dados_pokemon()
-        if df_todos_pokemons.empty:
-            st.warning("Nenhum Pokémon carregado para simulação.")
-        else: nomes_pokemons = sorted(
-            df_todos_pokemons["Nome"].dropna().unique().tolist()
-            )
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+          tipos_oficiais_calc = [
+              "Normal",
+              "Fogo",
+              "Água",
+              "Grama",
+              "Elétrico",
+              "Gelo",
+              "Lutador",
+              "Veneno",
+              "Terra",
+              "Voador",
+              "Psíquico",
+              "Inseto",
+              "Pedra",
+              "Fantasma",
+              "Dragão",
+              "Sombrio",
+              "Aço",
+              "Fada",
+          ]
+          tipo_ataque = st.selectbox(
+              "Tipo do Golpe Atacante:", tipos_oficiais_calc
+          )
+        with col_c2:
+          defensor_escolhido = st.selectbox(
+              "Pokémon Defensor:", nomes_pokemons
+          )
 
-            col_c1, col_c2 = st.columns(2)
-            with col_c1:
-                tipos_oficiais_calc = [
-                "Normal",
-                "Fogo",
-                "Água",
-                "Grama",
-                "Elétrico",
-                "Gelo",
-                "Lutador",
-                "Veneno",
-                "Terra",
-                "Voador",
-                "Psíquico",
-                "Inseto",
-                "Pedra",
-                "Fantasma",
-                "Dragão",
-                "Sombrio",
-                "Aço",
-                "Fada",
-                ]
-                tipo_ataque = st.selectbox(
-                    "Tipo do Golpe Atacante:", tipos_oficiais_calc
-                )
-                with col_c2:
-                    defensor_escolhido = st.selectbox(
-                        "Pokémon Defensor:", nomes_pokemons
-                    )
-                if defensor_escolhido:
-                    poke_def_dados = df_todos_pokemons[
-                        df_todos_pokemons["Nome"] == defensor_escolhido
-                    ] iloc[0]
-                    t1_def = poke_def_dados.get("Tipo 1", "")
-                    t2_def = poke_def_dados.get("Tipo 2", "")
+        if defensor_escolhido:
+          poke_def_dados = df_todos_pokemons[
+              df_todos_pokemons["Nome"] == defensor_escolhido
+          ].iloc[0]
+          t1_def = poke_def_dados.get("Tipo 1", "")
+          t2_def = poke_def_dados.get("Tipo 2", "")
 
-                    st,markdown(
-                    f"**Defensor:** `{defensor_escolhido}` | **Tipos:**"
-                    f" {criar_badge_tipo(t1_def)} {criar_badge_tipo(t2_def)}"
-                    unsafe_allow_html=True,
-                    )
+          st.markdown(
+              f"**Defensor:** `{defensor_escolhido}` | **Tipos:**"
+              f" {criar_badge_tipo(t1_def)} {criar_badge_tipo(t2_def)}",
+              unsafe_allow_html=True,
+          )
 
-                    defesas_simuladas = calcular_defesa_tipos(t1_def, t2_def)
+          # Usa a tua função de cálculo de defesa existente
+          defesas_simuladas = calcular_defesa_tipos(t1_def, t2_def)
           mult_resultado = defesas_simuladas.get(tipo_ataque, 1.0)
 
           st.write("")
@@ -1164,7 +1167,6 @@ if st.session_state.modo_mestre:
             )
           else:
             st.success(f"⚖️ **Dano Normal** (**×1**).")
-
     # --- BLOCO DE NOTAS & ROLEPLAY AGRUPADOS ---
     with sub_notas:
       st.subheader("📝 Bloco de Notas & Ideias de Roleplay")
