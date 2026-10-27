@@ -960,11 +960,6 @@ if st.session_state.modo_mestre:
         pct = int((mod - 1.0) * 100)
         st.write(f"• **{cat}**: Modificador de {mod}x ({pct}%)")
 
-    with sub_roleplay:
-      st.markdown("### Eventos Aleatórios")
-      if st.button("Sortear Evento"):
-        st.info("Um clima repentino alterou as condições da rota!")
-
     with sub_clima_dados:
       st.subheader("Sorteador de Clima por Estação")
       estacao_escolhida = st.selectbox(
