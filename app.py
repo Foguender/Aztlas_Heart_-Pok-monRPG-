@@ -922,16 +922,16 @@ with abas[2]:
 if st.session_state.modo_mestre:
   with abas[3]:
     st.title("Escudo do Mestre")
-    sub_mercado, sub_clima_dados, sub_iniciativa, sub_calculadora, sub_notas, sub_regras = st.tabs(
-        [
-            "Mercado",
-            "Clima & Dados da Mesa",
-            "Tracker de Iniciativa",
-            "Calculadora de Dano",
-            "Bloco de Notas & Roleplay",
-            "Regras Rápidas",
-        ]
-    )
+    sub_mercado, sub_clima_dados, sub_iniciativa, sub_calculadora, sub_notas, sub_regras = (
+    st.tabs([
+        "🎲 Mercado",
+        "🌤️ Clima & Dados da Mesa",
+        "⚔️ Tracker de Iniciativa",
+        "💥 Calculadora de Dano",
+        "📝 Bloco de Notas & Roleplay",
+        "📜 Regras Rápidas",
+    ])
+)
     df_itens = carregar_dados_itens()
     categorias_existentes = (
         sorted(list(df_itens["Tipo"].dropna().unique()))
