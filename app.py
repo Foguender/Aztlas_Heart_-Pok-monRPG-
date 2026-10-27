@@ -921,15 +921,15 @@ with abas[2]:
 # ==============================================================================
 if st.session_state.modo_mestre:
   with abas[3]:
-    st.title("🧙‍♂️ Escudo do Mestre")
-    sub_mercado, sub_roleplay, sub_clima_dados, sub_iniciativa, sub_notas, sub_regras = st.tabs(
+    st.title("Escudo do Mestre")
+    sub_mercado, sub_clima_dados, sub_iniciativa, sub_calculadora, sub_notas, sub_regras = st.tabs(
         [
-            "🎲 Mercado",
-            "🎭 Roleplay & Improv",
-            "🌤️ Clima & Dados da Mesa",
-            "⚔️ Tracker de Iniciativa",
-            "📝 Bloco de Notas",
-            "📜 Regras Rápidas",
+            "Mercado",
+            "Clima & Dados da Mesa",
+            "Tracker de Iniciativa",
+            "Calculadora de Dano",
+            "Bloco de Notas & Roleplay",
+            "Regras Rápidas",
         ]
     )
     df_itens = carregar_dados_itens()
@@ -942,14 +942,14 @@ if st.session_state.modo_mestre:
     with sub_mercado:
       col_btn1, col_btn2 = st.columns(2)
       with col_btn1:
-        if st.button("🎲 Girar Mercado", type="primary"):
+        if st.button("Girar Mercado", type="primary"):
           st.session_state.modificadores_preco = gerar_flutuacao_automatica(
               categorias_existentes
           )
           st.success("Mercado atualizado!")
           st.rerun()
       with col_btn2:
-        if st.button("🔄 Resetar Preços"):
+        if st.button("Resetar Preços"):
           st.session_state.modificadores_preco = {
               cat: 1.0 for cat in categorias_existentes
           }
@@ -961,18 +961,18 @@ if st.session_state.modo_mestre:
         st.write(f"• **{cat}**: Modificador de {mod}x ({pct}%)")
 
     with sub_roleplay:
-      st.markdown("### 🎲 Eventos Aleatórios")
-      if st.button("🔮 Sortear Evento"):
+      st.markdown("### Eventos Aleatórios")
+      if st.button("Sortear Evento"):
         st.info("Um clima repentino alterou as condições da rota!")
 
     with sub_clima_dados:
-      st.subheader("🌤️ Gerador de Clima por Estação")
+      st.subheader("Sorteador de Clima por Estação")
       estacao_escolhida = st.selectbox(
           "Selecione a Estação do Ano em Aztlas:",
           ["Primavera/Verão", "Outono/Inverno"],
       )
 
-      if st.button("🎲 Rolar Clima para esta Estação"):
+      if st.button("Rolar Clima para esta Estação"):
         climas_por_estacao = {
             "Primavera/Verão": [
                 "Sol Forte, Calmo",
@@ -1005,7 +1005,7 @@ if st.session_state.modo_mestre:
         )
 
       st.markdown("---")
-      st.subheader("👁️ Monitor de Rolagens dos Jogadores (À Distância)")
+      st.subheader("Monitor de Rolagens dos Jogadores")
       st.markdown(
           "As rolagens dos jogadores aparecem aqui automaticamente em tempo"
           " real:"
@@ -1032,7 +1032,7 @@ if st.session_state.modo_mestre:
 
       atualizar_rolagens()
 
-      if st.button("🗑️ Limpar Histórico de Rolagens do Banco"):
+      if st.button("Limpar Histórico de Rolagens do Banco"):
         caminho_banco = obter_caminho_banco()
         with sqlite3.connect(caminho_banco) as conn:
           cursor = conn.cursor()
@@ -1041,9 +1041,9 @@ if st.session_state.modo_mestre:
         st.success("Histórico limpo com sucesso!")
         st.rerun()
 
-    # --- NOVO: TRACKER DE INICIATIVA ---
+    # TRACKER DE INICIATIVA
     with sub_iniciativa:
-      st.subheader("⚔️ Gerenciador de Iniciativa")
+      st.subheader("Gerenciador de Iniciativa")
       col_i1, col_i2 = st.columns([2, 1])
       with col_i1:
         nome_combatente = st.text_input("Nome do Pokémon / Jogador / NPC:")
@@ -1057,7 +1057,7 @@ if st.session_state.modo_mestre:
           st.session_state.lista_iniciativa.append(
               {"nome": nome_combatente, "init": valor_init}
           )
-          # Ordena de forma decrescente (maior iniciativa primeiro)
+          # Ordena de forma decrescente
           st.session_state.lista_iniciativa = sorted(
               st.session_state.lista_iniciativa,
               key=lambda x: x["init"],
@@ -1082,16 +1082,95 @@ if st.session_state.modo_mestre:
               st.session_state.lista_iniciativa.pop(i)
               st.rerun()
 
-        if st.button("🧹 Limpar Combate Inteiro"):
+        if st.button("Limpar Combate Inteiro"):
           st.session_state.lista_iniciativa = []
           st.rerun()
 
-    # --- NOVO: BLOCO DE NOTAS DO MESTRE ---
+    # CALCULADORA DE DANO
+    with sub_calculadora:
+        st.subheader("Calculadora de dano & Eficácia")
+        st.markdown(
+            "Simule um golpe escolhendo o tipo do ataque e o Pokémon defensor para"
+            " calcular a eficácia instantâneamente."
+        )
+
+        df_todos_pokemons = carregar_dados_pokemon()
+        if df_todos_pokemons.empty:
+            st.warning("Nenhum Pokémon carregado para simulação.")
+        else: nomes_pokemons = sorted(
+            df_todos_pokemons["Nome"].dropna().unique().tolist()
+            )
+
+            col_c1, col_c2 = st.columns(2)
+            with col_c1:
+                tipos_oficiais_calc = [
+                "Normal",
+                "Fogo",
+                "Água",
+                "Grama",
+                "Elétrico",
+                "Gelo",
+                "Lutador",
+                "Veneno",
+                "Terra",
+                "Voador",
+                "Psíquico",
+                "Inseto",
+                "Pedra",
+                "Fantasma",
+                "Dragão",
+                "Sombrio",
+                "Aço",
+                "Fada",
+                ]
+                tipo_ataque = st.selectbox(
+                    "Tipo do Golpe Atacante:", tipos_oficiais_calc
+                )
+                with col_c2:
+                    defensor_escolhido = st.selectbox(
+                        "Pokémon Defensor:", nomes_pokemons
+                    )
+                if defensor_escolhido:
+                    poke_def_dados = df_todos_pokemons[
+                        df_todos_pokemons["Nome"] == defensor_escolhido
+                    ] iloc[0]
+                    t1_def = poke_def_dados.get("Tipo 1", "")
+                    t2_def = poke_def_dados.get("Tipo 2", "")
+
+                    st,markdown(
+                    f"**Defensor:** `{defensor_escolhido}` | **Tipos:**"
+                    f" {criar_badge_tipo(t1_def)} {criar_badge_tipo(t2_def)}"
+                    unsafe_allow_html=True,
+                    )
+
+                    defesas_simuladas = calcular_defesa_tipos(t1_def, t2_def)
+          mult_resultado = defesas_simuladas.get(tipo_ataque, 1.0)
+
+          st.write("")
+          if mult_resultado > 1:
+            st.error(
+                f"🔥 **Super Efetivo!** O multiplicador de dano é"
+                f" **×{mult_resultado:g}**."
+            )
+          elif mult_resultado < 1 and mult_resultado > 0:
+            st.warning(
+                f"🛡️ **Pouco Efetivo...** O multiplicador de dano é"
+                f" **×{mult_resultado:g}**."
+            )
+          elif mult_resultado == 0:
+            st.info(
+                f"🚫 **Ineficaz!** O Pokémon é imune a este tipo de golpe"
+                " (**×0**)."
+            )
+          else:
+            st.success(f"⚖️ **Dano Normal** (**×1**).")
+
+    # --- BLOCO DE NOTAS & ROLEPLAY AGRUPADOS ---
     with sub_notas:
-      st.subheader("📝 Bloco de Notas para Próximas Sessões")
+      st.subheader("📝 Bloco de Notas & Ideias de Roleplay")
       st.markdown(
-          "Escreve aqui os teus ganchos de enredo, segredos e ideias. As notas"
-          " ficam guardadas no banco de dados!"
+          "Escreve aqui os teus ganchos de enredo, segredos, eventos"
+          " aleatórios e notas para as próximas sessões."
       )
 
       caminho_banco = obter_caminho_banco()
@@ -1102,13 +1181,13 @@ if st.session_state.modo_mestre:
         nota_atual = row[0] if row else ""
 
       nova_nota = st.text_area(
-          "Anotações do Mestre:", value=nota_atual, height=300
+          "Anotações & Improv do Mestre:", value=nota_atual, height=300
       )
 
       if st.button("💾 Salvar Notas no Banco", type="primary"):
         with sqlite3.connect(caminho_banco) as conn:
           cursor = conn.cursor()
-          cursor.execute("DELETE FROM Notas_Mestre")  # Mantém a última versão atualizada
+          cursor.execute("DELETE FROM Notas_Mestre")
           cursor.execute(
               "INSERT INTO Notas_Mestre (conteudo) VALUES (?)", (nova_nota,)
           )
@@ -1116,7 +1195,7 @@ if st.session_state.modo_mestre:
         st.success("Notas guardadas com sucesso!")
 
     with sub_regras:
-      st.markdown("### 📜 Regras do Sistema")
+      st.markdown("### Regras")
       caminho_regras = os.path.join(
           os.path.dirname(__file__), "regras_mestre.md"
       )
